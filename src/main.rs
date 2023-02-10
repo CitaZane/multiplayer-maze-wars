@@ -4,6 +4,8 @@ use ggez::conf::{WindowMode, Conf, WindowSetup};
 
 mod game;
 pub use game::*;
+pub mod map;
+
 
 fn main()  -> GameResult {
     // Make a Context.
