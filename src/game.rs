@@ -2,11 +2,16 @@ use ggez::{Context,GameResult};
 use ggez::graphics::{self, Color};
 use ggez::event::EventHandler;
 pub use crate::map::Map;
+pub use crate::view::View;
+
+pub const VIEWPORT_WIDTH: f32 = 370.0;
+pub const VIEWPORT_HEIGHT: f32 = 410.0;
 
 pub struct Game {
     // Your state here...
     // viewport
-    map: Map
+    map: Map,
+    view:View,
 }
 // 17 x 33
 impl Game {
@@ -14,6 +19,7 @@ impl Game {
         // Load/create resources such as images here.
         Self {
             map: Map::new(),
+            view: View::new(),
             // ...
         }
     }
@@ -29,6 +35,7 @@ impl EventHandler for Game {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::WHITE);
         // Draw code here...
         self.map.draw(&mut canvas, ctx)?;
+        self.view.draw(&mut canvas, ctx)?;
         canvas.finish(ctx)
     }
 }

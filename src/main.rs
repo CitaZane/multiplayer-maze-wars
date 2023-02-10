@@ -4,13 +4,16 @@ use ggez::conf::{WindowMode, Conf, WindowSetup};
 
 mod game;
 pub use game::*;
+pub mod view;
 pub mod map;
 
+const SCREEN_WIDTH:f32 = 600.0;
+const SCREEN_HEIGHT:f32= 800.0;
 
 fn main()  -> GameResult {
     // Make a Context.
     let c = Conf::new();
-    let window_mode = WindowMode::default().dimensions(606.0, 808.0);
+    let window_mode = WindowMode::default().dimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
     let window_setup = WindowSetup::default().title("Maze Wars");
 
     let (mut ctx, event_loop) = ContextBuilder::new("maze_wars", "The Gang")

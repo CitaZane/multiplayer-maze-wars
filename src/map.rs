@@ -2,7 +2,12 @@ use ggez::{
     graphics::{self, Color, DrawParam, Mesh},
     Context, GameResult,
 };
+use crate::{VIEWPORT_HEIGHT, SCREEN_WIDTH};
 
+const TILE_SIZE: f32 = 7.0;
+const MAP_WIDTH: f32 = 33.0;
+const H_OFFSET: f32 = (SCREEN_WIDTH - MAP_WIDTH * TILE_SIZE) /2.0;
+const V_OFFSET: f32 = VIEWPORT_HEIGHT + 20.0 * 2.0;
 pub struct Map(pub Option<Vec<Vec<i32>>>);
 // Map size 33X17
 impl Map {
@@ -77,9 +82,7 @@ impl Map {
         ]
     }
     pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        const TILE_SIZE: f32 = 10.0;
-        const H_OFFSET: f32 = 135.0;
-        const V_OFFSET: f32 = 450.0;
+
         let map = self.0.as_ref().unwrap();
         for row in 0..map.len() {
             for col in 0..map[row].len() {
@@ -94,8 +97,7 @@ impl Map {
                     graphics::DrawMode::fill(),
                     rect,
                     Color::from_rgb(0, 0, 0),
-                )
-                .unwrap();
+                )?;
                 canvas.draw(&mesh, DrawParam::default());
             }
         }
