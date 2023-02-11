@@ -2,8 +2,35 @@ use std::env;
 use std::io::{self, BufRead};
 use std::net::{SocketAddr, UdpSocket};
 use std::str;
+use ggez::{ContextBuilder, GameResult};
+use ggez::event;
+use ggez::conf::{WindowMode, Conf, WindowSetup};
+mod game;
+pub use game::*;
+pub mod view;
+pub mod map;
+const SCREEN_WIDTH:f32 = 600.0;
+const SCREEN_HEIGHT:f32= 800.0;
 
-fn main() -> std::io::Result<()> {
+fn main()  -> GameResult {
+    // Make a Context.
+    let c = Conf::new();
+    let window_mode = WindowMode::default().dimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
+    let window_setup = WindowSetup::default().title("Maze Wars");
+    let (mut ctx, event_loop) = ContextBuilder::new("maze_wars", "The Gang")
+        .default_conf(c)
+        .window_setup(window_setup)
+        .window_mode(window_mode)
+        .build()?;
+    // Create an instance of your event handler.
+    // Usually, you should provide it with the Context object to
+    // use when setting your game up.
+    let game = Game::new(&mut ctx);
+    // Run!
+    event::run(ctx, event_loop, game);
+}
+
+fn connect() -> std::io::Result<()> {
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         println!("Usage {} hostname", args[0]);
