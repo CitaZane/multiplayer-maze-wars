@@ -11,13 +11,10 @@ fn main() -> std::io::Result<()> {
     }
     let hostname = &args[1];
 
-    let addrs = [
-        SocketAddr::from(([0, 0, 0, 0], 3400)),
-        SocketAddr::from(([0, 0, 0, 0], 3401)),
-        SocketAddr::from(([0, 0, 0, 0], 3402)),
-        SocketAddr::from(([0, 0, 0, 0], 3403)),
-        SocketAddr::from(([0, 0, 0, 0], 3404)),
-    ];
+    let mut addrs: [SocketAddr; 20] = [SocketAddr::from(([0, 0, 0, 0], 3400)); 20];
+    for i in 0..20{
+        addrs[i] = SocketAddr::from(([0, 0, 0, 0], 3400 + i as u16));
+    }
     let socket = UdpSocket::bind(&addrs[..]).expect("couldn't bind to address");
 
     // from https://stackoverflow.com/questions/30186037/how-can-i-read-a-single-line-from-stdin
@@ -36,7 +33,7 @@ fn main() -> std::io::Result<()> {
         let mut buf = [0; 2048];
         let (amt, _src) = socket.recv_from(&mut buf)?;
 
-        let echo = str::from_utf8(&buf[..amt]).unwrap();
+        let _echo = str::from_utf8(&buf[..amt]).unwrap();
         // println!("Echo {}", echo);
     }
     Ok(())

@@ -5,7 +5,7 @@ use std::net::UdpSocket;
 
 fn main() -> std::io::Result<()> {
     //let socket = UdpSocket::bind("0.0.0.0:2000")?; // for UDP4
-    let socket = UdpSocket::bind("192.168.1.126:3500")?; // for UDP4/6
+    let socket = UdpSocket::bind("127.0.0.1:3500")?; // for UDP4/6
     let mut buf = [0; 2048];
 
     loop {
@@ -19,5 +19,5 @@ fn main() -> std::io::Result<()> {
         // and send data back to origin.
         let buf = &mut buf[..amt];
         socket.send_to(buf, &src)?;
-    }
+    }   
 }
