@@ -1,23 +1,22 @@
-//use std::io::{self, Read, Write, BufRead};
+use local_ip_address::local_ip;
 use std::net::UdpSocket;
-//use std::env;
-//use std::str;
 
 fn main() -> std::io::Result<()> {
-    //let socket = UdpSocket::bind("0.0.0.0:2000")?; // for UDP4
-    let socket = UdpSocket::bind("127.0.0.1:3500")?; // for UDP4/6
-    let mut buf = [0; 2048];
+    let my_local_ip = local_ip().unwrap();
+    let socket = UdpSocket::bind(my_local_ip.to_string() + ":34254")?; // for UDP4/6
 
+    let mut buf = [0; 2048];
+    println!("Server started at: {}", my_local_ip.to_string() + ":34254");
     loop {
         // Receives a single datagram message on the socket.
         // If `buf` is too small to hold
         // the message, it will be cut off.
         let (amt, src) = socket.recv_from(&mut buf)?;
         let echo = std::str::from_utf8(&buf[..amt]).unwrap();
-        println!("Echo {}", echo);
+        println!("Message: {}", echo);
         // Redeclare `buf` as slice of the received data
         // and send data back to origin.
         let buf = &mut buf[..amt];
         socket.send_to(buf, &src)?;
-    }   
+    }
 }
