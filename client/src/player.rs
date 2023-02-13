@@ -9,9 +9,9 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         Self {
-            pos: Vector2::new(17.0, 9.0),
-            dir:Vector2::up(),
-            camera_plane:Vector2::right(),
+            pos: Vector2::new(13., 16.),
+            dir:Vector2 { x:0., y: -1.},
+            camera_plane:Vector2 { x:0.65, y: 0.0 },
         }
     }
 }
