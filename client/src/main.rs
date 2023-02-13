@@ -6,6 +6,7 @@ mod game;
 pub use game::*;
 pub mod map;
 pub mod view;
+pub mod player;
 const SCREEN_WIDTH: f32 = 600.0;
 const SCREEN_HEIGHT: f32 = 800.0;
 

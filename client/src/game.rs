@@ -3,6 +3,7 @@ use ggez::graphics::{self, Color};
 use ggez::event::EventHandler;
 pub use crate::map::Map;
 pub use crate::view::View;
+pub use crate::player::Player;
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
 pub struct Game {
@@ -10,6 +11,7 @@ pub struct Game {
     // viewport
     map: Map,
     view:View,
+    player:Player,
 }
 // 17 x 33
 impl Game {
@@ -18,6 +20,7 @@ impl Game {
         Self {
             map: Map::new(),
             view: View::new(),
+            player:Player::new(),
             // ...
         }
     }
