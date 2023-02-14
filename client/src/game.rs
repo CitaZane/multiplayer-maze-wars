@@ -109,7 +109,9 @@ impl Game {
 
             //Calculate height of line to draw on screen
             let line_height = VIEWPORT_HEIGHT / prep_wall_dist as f32;
-            if !edge && side != 0 {
+            let mut side_type = 1;
+            if self.player.dir.x ==0.{side_type =0}
+            if !edge && side != side_type {
                 if line_height.round() != last_height.round() {
                     edge = true
                 }
