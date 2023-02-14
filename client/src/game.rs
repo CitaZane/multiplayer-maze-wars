@@ -248,25 +248,53 @@ impl EventHandler for Game {
                 Vector2 { x: 1., y: 0. } => {
                     // Looking Right
                     if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f64 {
-                        self.player.pos.x += 1.;
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x + 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x += 1.
+                        }
                     }
                 }
                 Vector2 { x: 0., y: 1. } => {
                     // Down
                     if self.player.pos.x < (self.map.0.clone().unwrap().len() - 1) as f64 {
-                        self.player.pos.y += 1.;
+                        if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y += 1.;
+                        }
                     }
                 }
                 Vector2 { x: -1., y: 0. } => {
                     //  Left
                     if self.player.pos.x >= 1. {
-                        self.player.pos.x -= 1.;
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x - 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x -= 1.
+                        }
                     }
                 }
                 Vector2 { x: 0., y: -1. } => {
                     // Up
                     if self.player.pos.y >= 1. {
-                        self.player.pos.y -= 1.
+                        if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y -= 1.;
+                        }
                     }
                 }
                 _ => (),
@@ -277,25 +305,53 @@ impl EventHandler for Game {
                 Vector2 { x: 1., y: 0. } => {
                     // Right
                     if self.player.pos.x >= 1. {
-                        self.player.pos.x -= 1.;
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x - 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x -= 1.
+                        }
                     }
                 }
                 Vector2 { x: 0., y: 1. } => {
                     // Down
                     if self.player.pos.y >= 1. {
-                        self.player.pos.y -= 1.;
+                        if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y -= 1.;
+                        }
                     }
                 }
                 Vector2 { x: -1., y: 0. } => {
                     //  Left
                     if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f64 {
-                        self.player.pos.x += 1.;
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x + 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x += 1.
+                        }
                     }
                 }
                 Vector2 { x: 0., y: -1. } => {
                     // Up
                     if self.player.pos.y < (self.map.0.clone().unwrap().len() - 1) as f64 {
-                        self.player.pos.y += 1.
+                        if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y += 1.;
+                        }
                     }
                 }
                 _ => (),
