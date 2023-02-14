@@ -22,6 +22,7 @@ fn main() -> GameResult {
         .default_conf(c)
         .window_setup(window_setup)
         .window_mode(window_mode)
+        .add_resource_path("assets")
         .build()?;
     // Create an instance of your event handler.
     // Usually, you should provide it with the Context object to
