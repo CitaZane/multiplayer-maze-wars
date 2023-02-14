@@ -221,24 +221,56 @@ impl EventHandler for Game {
         // }
         if ctx.keyboard.is_key_pressed(KeyCode::Up) {
             match self.player.dir {
-                Vector2 { x: 1., y: 0. } => { // Looking Right
-                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len()-1) as f64{
-                        self.player.pos.x += 1.;
+                Vector2 { x: 1., y: 0. } => {
+                    // Looking Right
+                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f64 {
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x + 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x += 1.
+                        }
                     }
-                },
-                Vector2 {  x: 0., y: 1.  } => { // Down
-                    if self.player.pos.x < (self.map.0.clone().unwrap().len()-1) as f64{
-                        self.player.pos.y += 1.;
+                }
+                Vector2 { x: 0., y: 1. } => {
+                    // Down
+                    if self.player.pos.x < (self.map.0.clone().unwrap().len() - 1) as f64 {
+                        if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y += 1.;
+                        }
                     }
-                },
-                Vector2 { x: -1., y: 0. } => { //  Left
-                    if self.player.pos.x >= 1.{
-                        self.player.pos.x -= 1.;
+                }
+                Vector2 { x: -1., y: 0. } => {
+                    //  Left
+                    if self.player.pos.x >= 1. {
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x - 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x -= 1.
+                        }
                     }
-                },
-                Vector2 {  x: 0., y: -1.  } => { // Up
-                    if self.player.pos.y >= 1.{
-                        self.player.pos.y -= 1.
+                }
+                Vector2 { x: 0., y: -1. } => {
+                    // Up
+                    if self.player.pos.y >= 1. {
+                        if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y -= 1.;
+                        }
                     }
                 }
                 _ => (),
@@ -246,24 +278,56 @@ impl EventHandler for Game {
         }
         if ctx.keyboard.is_key_pressed(KeyCode::Down) {
             match self.player.dir {
-                Vector2 { x: 1., y: 0. } => { // Right
+                Vector2 { x: 1., y: 0. } => {
+                    // Right
                     if self.player.pos.x >= 1. {
-                        self.player.pos.x -= 1.;
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x - 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x -= 1.
+                        }
                     }
-                },
-                Vector2 {  x: 0., y: 1.  } => { // Down
-                    if self.player.pos.y >= 1.{
-                        self.player.pos.y -= 1.;
+                }
+                Vector2 { x: 0., y: 1. } => {
+                    // Down
+                    if self.player.pos.y >= 1. {
+                        if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y -= 1.;
+                        }
                     }
-                },
-                Vector2 { x: -1., y: 0. } => { //  Left
-                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len()-1) as f64{
-                        self.player.pos.x += 1.;
+                }
+                Vector2 { x: -1., y: 0. } => {
+                    //  Left
+                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f64 {
+                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                            [(self.player.pos.x + 1.) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.x += 1.
+                        }
                     }
-                },
-                Vector2 {  x: 0., y: -1.  } => { // Up
-                    if self.player.pos.y < (self.map.0.clone().unwrap().len()-1) as f64{
-                        self.player.pos.y += 1.
+                }
+                Vector2 { x: 0., y: -1. } => {
+                    // Up
+                    if self.player.pos.y < (self.map.0.clone().unwrap().len() - 1) as f64 {
+                        if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
+                            [(self.player.pos.x) as usize]
+                            == 1
+                        {
+                            return Ok(());
+                        } else {
+                            self.player.pos.y += 1.;
+                        }
                     }
                 }
                 _ => (),
@@ -271,43 +335,51 @@ impl EventHandler for Game {
         }
         if ctx.keyboard.is_key_pressed(KeyCode::Left) {
             match self.player.dir {
-                Vector2 { x: 1., y: 0. } => { // Looking Right
+                Vector2 { x: 1., y: 0. } => {
+                    // Looking Right
                     self.player.dir = Vector2 { x: 0., y: -1. };
-                    self.player.camera_plane = Vector2 { x:0.65, y: 0.0 }
-                },
-                Vector2 {  x: 0., y: 1.  } => { // Down
-                    self.player.dir = Vector2 {  x: 1., y: 0. };
-                    self.player.camera_plane = Vector2 { x:0.0, y: 0.65 }
-                },
-                Vector2 {  x: -1., y: 0.  } => { // Left
+                    self.player.camera_plane = Vector2 { x: 0.65, y: 0.0 }
+                }
+                Vector2 { x: 0., y: 1. } => {
+                    // Down
+                    self.player.dir = Vector2 { x: 1., y: 0. };
+                    self.player.camera_plane = Vector2 { x: 0.0, y: 0.65 }
+                }
+                Vector2 { x: -1., y: 0. } => {
+                    // Left
                     self.player.dir = Vector2 { x: 0., y: 1. };
                     self.player.camera_plane = Vector2 { x: -0.65, y: 0. }
-                },
-                Vector2 {  x: 0., y: -1.  } => { // Up
-                    self.player.dir = Vector2 {  x: -1., y: 0. };
-                    self.player.camera_plane = Vector2 { x:0., y: -0.65 }
-                },
+                }
+                Vector2 { x: 0., y: -1. } => {
+                    // Up
+                    self.player.dir = Vector2 { x: -1., y: 0. };
+                    self.player.camera_plane = Vector2 { x: 0., y: -0.65 }
+                }
                 _ => (),
             }
         }
         if ctx.keyboard.is_key_pressed(KeyCode::Right) {
             match self.player.dir {
-                Vector2 { x: 1., y: 0. } => { // Looking Right
+                Vector2 { x: 1., y: 0. } => {
+                    // Looking Right
                     self.player.dir = Vector2 { x: 0., y: 1. };
                     self.player.camera_plane = Vector2 { x: -0.65, y: 0. }
-                },
-                Vector2 {  x: 0., y: 1.  } => { // Down
-                    self.player.dir = Vector2 {  x: -1., y: 0. };
-                    self.player.camera_plane = Vector2 { x:0., y: -0.65 }
-                },
-                Vector2 {  x: -1., y: 0.  } => { // Left
+                }
+                Vector2 { x: 0., y: 1. } => {
+                    // Down
+                    self.player.dir = Vector2 { x: -1., y: 0. };
+                    self.player.camera_plane = Vector2 { x: 0., y: -0.65 }
+                }
+                Vector2 { x: -1., y: 0. } => {
+                    // Left
                     self.player.dir = Vector2 { x: 0., y: -1. };
-                    self.player.camera_plane = Vector2 { x:0.65, y: 0.0 }
-                },
-                Vector2 {  x: 0., y: -1.  } => { // Up
-                    self.player.dir = Vector2 {  x: 1., y: 0. };
-                    self.player.camera_plane = Vector2 { x:0.0, y: 0.65 }
-                },
+                    self.player.camera_plane = Vector2 { x: 0.65, y: 0.0 }
+                }
+                Vector2 { x: 0., y: -1. } => {
+                    // Up
+                    self.player.dir = Vector2 { x: 1., y: 0. };
+                    self.player.camera_plane = Vector2 { x: 0.0, y: 0.65 }
+                }
 
                 _ => (),
             }
