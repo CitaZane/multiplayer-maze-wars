@@ -83,10 +83,12 @@ impl Game {
                     side_dist_x += delta_dist_x;
                     map_x += step_x;
                     side = 0;
+                    // if self.player.dir.x == 0.{side +=1}
                 } else {
                     side_dist_y += delta_dist_y;
                     map_y += step_y;
                     side = 1;
+                    // if self.player.dir.x == 0.{side +=1}
                 }
                 if map_x as usize >= maze[0].len() {
                     map_x -= 1
@@ -110,9 +112,13 @@ impl Game {
             //Calculate height of line to draw on screen
             let line_height = VIEWPORT_HEIGHT / prep_wall_dist as f32;
             let mut side_type = 1;
-            if self.player.dir.x ==0.{side_type =0}
-            if !edge && side != side_type {
+            if self.player.dir.x == 0.{side_type =0}
+            if !edge && side != side_type{
                 if line_height.round() != last_height.round() {
+                    edge = true
+                }
+            }else if !edge && side == side_type{
+                if (line_height.round() - last_height.round()).abs() > 5.0 {
                     edge = true
                 }
             }
