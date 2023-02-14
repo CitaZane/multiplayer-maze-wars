@@ -1,5 +1,6 @@
 use vect::vector2::Vector2;
 
+#[derive(Debug)]
 pub struct Player {
     pub pos: Vector2,
     pub dir: Vector2,
@@ -9,9 +10,9 @@ pub struct Player {
 impl Player {
     pub fn new() -> Self {
         Self {
-            pos: Vector2::new(13., 16.),
-            dir:Vector2 { x:0., y: -1.},
-            camera_plane:Vector2 { x:0.65, y: 0.0 },
+            pos: Vector2::new(1., 1.),
+            dir:Vector2 { x:1., y: 0.},
+            camera_plane:Vector2 { x:0.0, y: 0.65 },
         }
     }
 }
