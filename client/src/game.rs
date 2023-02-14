@@ -12,18 +12,14 @@ pub struct Game {
     // viewport
     map: Map,
     view: View,
-    typing: bool,
-    input: Text,
 }
 // 17 x 33
 impl Game {
-    pub fn new(_ctx: &mut Context) -> Self {
-        Self {
+    pub fn new(ctx: &mut Context) -> GameResult<Game> {
+        Ok(Self {
             map: Map::new(),
-            view: View::new(),
-            input: Text::new(""),
-            typing: false,
-        }
+            view: View::new(ctx, ViewType::MainMenu)?,
+        })
     }
 }
 impl EventHandler for Game {
@@ -46,9 +42,10 @@ impl EventHandler for Game {
     ) -> Result<(), GameError> {
         if let MouseButton::Left = button {
             let mut new_view = None;
-
+            self.view.name_input_active = false;
+            self.view.ip_input_active = false;
             match &self.view.current_view {
-                ViewType::Game => todo!(),
+                ViewType::Game(_) => {}
                 ViewType::MainMenu => {
                     for elem in &self.view.elements {
                         if x > elem.rect.x
@@ -76,11 +73,21 @@ impl EventHandler for Game {
                         {
                             if elem.name == "IP_INPUT" {
                                 println!("IP input");
+                                self.view.ip_input_active = true;
+                                if self.view.name_input_active {
+                                    self.view.name_input_active = false;
+                                }
                             } else if elem.name == "NAME_INPUT" {
+                                self.view.name_input_active = true;
+                                if self.view.ip_input_active {
+                                    self.view.ip_input_active = false;
+                                }
                                 println!("Name input")
                             } else if elem.name == "JOIN_GAME" {
-                                new_view = Some(ViewType::Game);
+                                new_view = Some(ViewType::Game(Map::new()));
                                 println!("Game");
+                            } else if elem.name == "BACK_ARROW_IMG" {
+                                new_view = Some(ViewType::MainMenu)
                             }
                         }
                     }
@@ -91,11 +98,25 @@ impl EventHandler for Game {
                 ViewType::CreateGame => {
                     // name input
                     // create game btn
-                    todo!()
+                    for elem in &self.view.elements {
+                        if x > elem.rect.x
+                            && x < elem.rect.x + elem.rect.w
+                            && y > elem.rect.y
+                            && y < elem.rect.y + elem.rect.h
+                        {
+                            if elem.name == "NAME_INPUT" {
+                                self.view.name_input_active = true;
+                            } else if elem.name == "CREATE_GAME" {
+                                new_view = Some(ViewType::Game(Map::new()));
+                            } else if elem.name == "BACK_ARROW_IMG" {
+                                new_view = Some(ViewType::MainMenu)
+                            }
+                        }
+                    }
                 }
             };
             if let Some(view) = new_view {
-                self.view.current_view = view;
+                self.view = View::new(_ctx, view)?;
             }
         }
 
@@ -104,10 +125,16 @@ impl EventHandler for Game {
 
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
         println!("Character: {}", character);
-        if self.typing && character.is_alphanumeric() {
-            if self.input.contents().len() < 10 {
-                self.input.add(character);
-            }
+        if self.view.ip_input_active && character.is_alphanumeric()
+            || character == '.'
+            || character == ':'
+        {
+            self.view.ip_address.add(character);
+            println!("IP: {:?}", self.view.ip_address);
+        }
+        if self.view.name_input_active && character.is_alphanumeric() {
+            self.view.name.add(character);
+            println!("Name: {:?}", self.view.name);
         }
         Ok(())
     }
@@ -122,9 +149,16 @@ impl EventHandler for Game {
 
         if let Some(keycode) = input.keycode {
             if let keyboard::KeyCode::Back = keycode {
-                let mut new_string = self.input.contents();
-                new_string.pop();
-                self.input = Text::new(new_string);
+                if self.view.ip_input_active {
+                    let mut new_string = self.view.ip_address.contents();
+                    new_string.pop();
+                    self.view.ip_address = Text::new(new_string);
+                }
+                if self.view.name_input_active {
+                    let mut new_string = self.view.name.contents();
+                    new_string.pop();
+                    self.view.name = Text::new(new_string);
+                }
             }
         }
         Ok(())

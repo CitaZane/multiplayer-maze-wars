@@ -23,11 +23,12 @@ fn main() -> GameResult {
         .default_conf(c)
         .window_setup(window_setup)
         .window_mode(window_mode)
+        .add_resource_path("resources")
         .build()?;
     // Create an instance of your event handler.
     // Usually, you should provide it with the Context object to
     // use when setting your game up.
-    let game = Game::new(&mut ctx);
+    let game = Game::new(&mut ctx)?;
     // Run!
     event::run(ctx, event_loop, game);
 }
