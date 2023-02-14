@@ -1,6 +1,6 @@
 pub use crate::map::Map;
 pub use crate::view::View;
-use crate::SCREEN_WIDTH;
+use crate::view::ViewType;
 use ggez::event::{EventHandler, MouseButton};
 use ggez::graphics::{self, Color, Text};
 use ggez::input::keyboard;
@@ -47,42 +47,55 @@ impl EventHandler for Game {
         if let MouseButton::Left = button {
             let mut new_view = None;
 
-            match &self.view {
-                View::Game => todo!(),
-                View::MainMenu(data) => {
-                    for elem in data {
+            match &self.view.current_view {
+                ViewType::Game => todo!(),
+                ViewType::MainMenu => {
+                    for elem in &self.view.elements {
                         if x > elem.rect.x
                             && x < elem.rect.x + elem.rect.w
                             && y > elem.rect.y
                             && y < elem.rect.y + elem.rect.h
                         {
                             if elem.name == "CREATE_GAME" {
-                                new_view = Some(View::CreateGame);
+                                new_view = Some(ViewType::CreateGame);
 
                                 println!("Create game");
                             } else if elem.name == "JOIN_GAME" {
-                                new_view = Some(View::JoinGame);
+                                new_view = Some(ViewType::JoinGame);
                                 println!("Join game");
                             }
                         }
                     }
-
-                    // join game btn
                 }
-                View::JoinGame => {
+                ViewType::JoinGame => {
+                    for elem in &self.view.elements {
+                        if x > elem.rect.x
+                            && x < elem.rect.x + elem.rect.w
+                            && y > elem.rect.y
+                            && y < elem.rect.y + elem.rect.h
+                        {
+                            if elem.name == "IP_INPUT" {
+                                println!("IP input");
+                            } else if elem.name == "NAME_INPUT" {
+                                println!("Name input")
+                            } else if elem.name == "JOIN_GAME" {
+                                new_view = Some(ViewType::Game);
+                                println!("Game");
+                            }
+                        }
+                    }
                     // name input
                     // ip input
                     // join game btn
-                    todo!()
                 }
-                View::CreateGame => {
+                ViewType::CreateGame => {
                     // name input
                     // create game btn
                     todo!()
                 }
             };
             if let Some(view) = new_view {
-                self.view = view;
+                self.view.current_view = view;
             }
         }
 
