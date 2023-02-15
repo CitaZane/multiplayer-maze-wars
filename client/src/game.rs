@@ -149,7 +149,7 @@ impl Game {
             let sprite_screen_x = (VIEWPORT_WIDTH as f64/ 2.0) * (1.+ transform_x/transform_y);
 
             // calc the height of the sprite plane
-            let h = 100.0;
+            let h = 165.0;
             let sprite_height = (VIEWPORT_HEIGHT as f64 /transform_y).abs() as f32;
             let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
             let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT /2.0;
@@ -161,10 +161,15 @@ impl Game {
             let x = (sprite_x_start  + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
             let y = sprite_y_end as f32 + y_offset - scaled_size ;
             if transform_y > 0.0 && sprite_x_start > 0.0 && sprite_x_end < VIEWPORT_WIDTH+x_offset && buffer[(x  - x_offset) as usize]+y_offset < y+ scaled_size{
-                let point = graphics::Rect::new(x, y, scaled_size, scaled_size);
+                let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
+                let scale = scaled_size / player_img.height() as f32 * 1.2;
+                canvas.draw(&player_img, DrawParam::default()
+                .dest([x - scaled_size*0.15 , y])
+                .scale([scale,scale]));
+                // let point = graphics::Rect::new(x, y, scaled_size, scaled_size);
 
-                let mesh = Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), point, Color::RED)?;
-                canvas.draw(&mesh, DrawParam::default());   
+                // let mesh = Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), point, Color::RED)?;
+                // canvas.draw(&mesh, DrawParam::default());   
             }
             }
         Ok(())
