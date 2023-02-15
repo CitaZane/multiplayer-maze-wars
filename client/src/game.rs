@@ -2,7 +2,7 @@ pub use crate::map::Map;
 pub use crate::view::View;
 use crate::view::{remove_input_text_last_letter, ViewType};
 use ggez::event::{EventHandler, MouseButton};
-use ggez::graphics::{self, Color};
+use ggez::graphics::{self, Color, Drawable};
 use ggez::input::keyboard;
 use ggez::{Context, GameError, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
@@ -113,13 +113,18 @@ impl EventHandler for Game {
     }
 
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
-        if self.view.ip_input_active && character.is_alphanumeric()
+        if self.view.ip_input_active
+            && character.is_alphanumeric()
+            && self.view.ip_address.contents().len() <= 20
             || character == '.'
             || character == ':'
         {
             self.view.ip_address.add(character);
         }
-        if self.view.name_input_active && character.is_alphanumeric() {
+        if self.view.name_input_active
+            && character.is_alphanumeric()
+            && self.view.name.contents().len() <= 10
+        {
             self.view.name.add(character);
         }
         Ok(())

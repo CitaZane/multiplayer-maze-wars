@@ -18,7 +18,7 @@ fn main() -> GameResult {
     // Make a Context.
     let c = Conf::new();
     let window_mode = WindowMode::default().dimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
-    let window_setup = WindowSetup::default().title("Maze Wars");
+    let window_setup = WindowSetup::default().title("Maze Wars").icon("/eye.png");
     let (mut ctx, event_loop) = ContextBuilder::new("maze_wars", "The Gang")
         .default_conf(c)
         .window_setup(window_setup)
