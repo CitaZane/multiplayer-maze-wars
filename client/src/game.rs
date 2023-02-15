@@ -223,7 +223,7 @@ impl Game {
         let (x, y) = self.map.get_coordinates_for_pos(&self.player.pos);
         let rot = self.player.get_rotation();
         let (x_comp, y_comp)=self.player.get_rotation_compensaion();
-        let scale = 0.45;
+        let scale = 0.6;
         let size = arrow_img.height();
         let x = x + size as f32*scale  * x_comp;
         let y = y + size as f32*scale  * y_comp;

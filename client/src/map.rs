@@ -4,7 +4,7 @@ use ggez::{
 };
 use vect::vector2::Vector2;
 use crate::{VIEWPORT_HEIGHT, SCREEN_WIDTH};
-const TILE_SIZE: f32 = 7.0;
+const TILE_SIZE: f32 = 9.0;
 const MAP_WIDTH: f32 = 33.0;
 const H_OFFSET: f32 = (SCREEN_WIDTH - MAP_WIDTH * TILE_SIZE) /2.0;
 const V_OFFSET: f32 = VIEWPORT_HEIGHT + 20.0 * 2.0;
