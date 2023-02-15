@@ -35,6 +35,7 @@ impl Game {
         let maze = self.map.0.as_ref().unwrap();
         let mut last_side = 0;
         let mut last_height: f32 = 0.;
+        let mut buffer:Vec<f32> = vec![]; //used for drawing opponents
         // calculate rays for ech pixel in horizontal direction
         for i in 0..VIEWPORT_WIDTH as i32 {
             let camera_x = (2 * i) as f64 / VIEWPORT_WIDTH as f64 - 1.0;
@@ -127,13 +128,14 @@ impl Game {
                 self.draw_edge(canvas, ctx, line_height, last_height, i)?;
             }
 
+            buffer.push(Game::calc_bottom_point(line_height));
             last_height = line_height;
             last_side = side;
         }
-        self.draw_opponents(canvas,ctx)?;
+        self.draw_opponents(canvas,ctx, buffer)?;
         Ok(())
     }
-    fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult{
+    fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context, buffer:Vec<f32>) -> GameResult{
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
         for i in 0..self.opponents.len(){
@@ -155,9 +157,11 @@ impl Game {
             let sprite_x_start =  -sprite_height / 2.0 + sprite_screen_x  as f32;
             let sprite_x_end = sprite_height / 2.0 + sprite_screen_x as f32;
             
-            if transform_y > 0.0 && sprite_x_start > 0.0{
-                let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
-                let point = graphics::Rect::new((sprite_x_start  +sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0, sprite_y_end as f32 + y_offset - scaled_size, scaled_size, scaled_size);
+            let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
+            let x = (sprite_x_start  + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
+            let y = sprite_y_end as f32 + y_offset - scaled_size ;
+            if transform_y > 0.0 && sprite_x_start > 0.0 && sprite_x_end < VIEWPORT_WIDTH+x_offset && buffer[(x  - x_offset) as usize]+y_offset < y+ scaled_size{
+                let point = graphics::Rect::new(x, y, scaled_size, scaled_size);
 
                 let mesh = Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), point, Color::RED)?;
                 canvas.draw(&mesh, DrawParam::default());   
