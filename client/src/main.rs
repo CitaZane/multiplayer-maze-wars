@@ -5,8 +5,9 @@ use local_ip_address::local_ip;
 use std::net::{SocketAddr, UdpSocket};
 mod game;
 pub use game::*;
+pub mod drawer;
 pub mod map;
-pub mod view;
+pub mod views;
 const SCREEN_WIDTH: f32 = 600.0;
 const SCREEN_HEIGHT: f32 = 800.0;
 

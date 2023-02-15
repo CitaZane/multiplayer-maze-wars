@@ -1,8 +1,9 @@
 pub use crate::map::Map;
-pub use crate::view::View;
-use crate::view::{remove_input_text_last_letter, ViewType};
+use crate::views::main_menu::MainMenuStruct;
+use crate::views::remove_input_text_last_letter;
+pub use crate::views::View;
 use ggez::event::{EventHandler, MouseButton};
-use ggez::graphics::{self, Color, Drawable};
+use ggez::graphics::{self, Color};
 use ggez::input::keyboard;
 use ggez::{Context, GameError, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
@@ -14,7 +15,7 @@ pub struct Game {
 impl Game {
     pub fn new(ctx: &mut Context) -> GameResult<Game> {
         Ok(Self {
-            view: View::new(ctx, ViewType::MainMenu)?,
+            view: View::MainMenu(MainMenuStruct::new(ctx)?),
         })
     }
 }
@@ -30,82 +31,30 @@ impl EventHandler for Game {
 
     fn mouse_button_down_event(
         &mut self,
-        _ctx: &mut Context,
+        ctx: &mut Context,
         button: MouseButton,
         x: f32,
         y: f32,
     ) -> Result<(), GameError> {
         if let MouseButton::Left = button {
-            // if current view will change, it will hold the new view value
             let mut new_view = None;
-            // make inputs inactive in case if user clicked on anything else than a input box
-            self.view.name_input_active = false;
-            self.view.ip_input_active = false;
-
-            // based on current view, look if user clicked on its element rects
-            // element rects are input and buttons rects
-            match &self.view.current_view {
-                ViewType::MainMenu => {
-                    for (name, elem_rect) in &self.view.element_rects {
-                        if x > elem_rect.x
-                            && x < elem_rect.x + elem_rect.w
-                            && y > elem_rect.y
-                            && y < elem_rect.y + elem_rect.h
-                        {
-                            if name == "CREATE_GAME" {
-                                new_view = Some(ViewType::CreateGame);
-                            } else if name == "JOIN_GAME" {
-                                new_view = Some(ViewType::JoinGame);
-                            }
-                        }
-                    }
+            match &mut self.view {
+                View::MainMenu(view_data) => {
+                    new_view = view_data.check_mouse_click(x, y, ctx);
                 }
-                ViewType::JoinGame => {
-                    for (name, elem_rect) in &self.view.element_rects {
-                        if x > elem_rect.x
-                            && x < elem_rect.x + elem_rect.w
-                            && y > elem_rect.y
-                            && y < elem_rect.y + elem_rect.h
-                        {
-                            if name == "IP_INPUT" {
-                                self.view.ip_input_active = true;
-                                if self.view.name_input_active {
-                                    self.view.name_input_active = false;
-                                }
-                            } else if name == "NAME_INPUT" {
-                                self.view.name_input_active = true;
-                                if self.view.ip_input_active {
-                                    self.view.ip_input_active = false;
-                                }
-                            } else if name == "JOIN_GAME" {
-                                new_view = Some(ViewType::Game(Map::new()));
-                            } else if name == "BACK_ARROW_IMG" {
-                                new_view = Some(ViewType::MainMenu)
-                            }
-                        }
-                    }
+                View::JoinGame(view_data) => {
+                    view_data.ip_input_active = false;
+                    view_data.name_input_active = false;
+                    new_view = view_data.check_mouse_click(x, y, ctx);
                 }
-                ViewType::CreateGame => {
-                    for (name, elem_rect) in &self.view.element_rects {
-                        if x > elem_rect.x
-                            && x < elem_rect.x + elem_rect.w
-                            && y > elem_rect.y
-                            && y < elem_rect.y + elem_rect.h
-                        {
-                            if name == "NAME_INPUT" {
-                                self.view.name_input_active = true;
-                            } else if name == "CREATE_GAME" {
-                                new_view = Some(ViewType::Game(Map::new()));
-                            } else if name == "BACK_ARROW_IMG" {
-                                new_view = Some(ViewType::MainMenu)
-                            }
-                        }
-                    }
+                View::CreateGame(view_data) => {
+                    view_data.name_input_active = false;
+                    new_view = view_data.check_mouse_click(x, y, ctx);
                 }
-                ViewType::Game(_) => {}
+                View::Game(_) => {}
             };
             if let Some(view) = new_view {
-                self.view = View::new(_ctx, view)?;
+                self.view = view;
             }
         }
 
@@ -113,20 +62,35 @@ impl EventHandler for Game {
     }
 
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
-        if self.view.ip_input_active
-            && character.is_alphanumeric()
-            && self.view.ip_address.contents().len() <= 20
-            || character == '.'
-            || character == ':'
-        {
-            self.view.ip_address.add(character);
+        match &mut self.view {
+            View::Game(_) => {}
+            View::MainMenu(_) => {}
+            View::JoinGame(view_data) => {
+                if view_data.ip_input_active
+                    && character.is_alphanumeric()
+                    && view_data.ip_address.contents().len() <= 20
+                    || character == '.'
+                    || character == ':'
+                {
+                    view_data.ip_address.add(character);
+                }
+                if view_data.name_input_active
+                    && character.is_alphanumeric()
+                    && view_data.name.contents().len() <= 10
+                {
+                    view_data.name.add(character);
+                }
+            }
+            View::CreateGame(view_data) => {
+                if view_data.name_input_active
+                    && character.is_alphanumeric()
+                    && view_data.name.contents().len() <= 10
+                {
+                    view_data.name.add(character);
+                }
+            }
         }
-        if self.view.name_input_active
-            && character.is_alphanumeric()
-            && self.view.name.contents().len() <= 10
-        {
-            self.view.name.add(character);
-        }
+
         Ok(())
     }
 
@@ -138,12 +102,25 @@ impl EventHandler for Game {
     ) -> Result<(), GameError> {
         if let Some(keycode) = input.keycode {
             if let keyboard::KeyCode::Back = keycode {
-                if self.view.ip_input_active {
-                    self.view.ip_address =
-                        remove_input_text_last_letter(self.view.ip_address.contents());
-                }
-                if self.view.name_input_active {
-                    self.view.name = remove_input_text_last_letter(self.view.name.contents());
+                match &mut self.view {
+                    View::Game(_) => {}
+                    View::MainMenu(_) => {}
+                    View::JoinGame(view_data) => {
+                        if view_data.ip_input_active {
+                            view_data.ip_address =
+                                remove_input_text_last_letter(view_data.ip_address.contents());
+                        }
+                        if view_data.name_input_active {
+                            view_data.name =
+                                remove_input_text_last_letter(view_data.name.contents());
+                        }
+                    }
+                    View::CreateGame(view_data) => {
+                        if view_data.name_input_active {
+                            view_data.name =
+                                remove_input_text_last_letter(view_data.name.contents());
+                        }
+                    }
                 }
             }
         }
