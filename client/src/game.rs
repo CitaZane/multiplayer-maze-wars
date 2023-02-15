@@ -1,5 +1,6 @@
 use ggez::glam::Vec2;
 use ggez::mint::Point2;
+use ggez::timer::fps;
 use vect::vector2::Vector2;
 // use ggez::mint::Vector2;
 pub use crate::map::Map;
@@ -7,7 +8,7 @@ pub use crate::player::Player;
 pub use crate::view::View;
 use crate::SCREEN_WIDTH;
 use ggez::event::EventHandler;
-use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh};
+use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, Text, PxScale, TextFragment};
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
@@ -233,6 +234,25 @@ impl Game {
         .rotation(rot));
         Ok(())
     }
+    fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult{
+        let counter = ctx.time.fps();
+        // let text = Text::new(counter.to_string());
+        let text = Text::new(TextFragment {
+            // `TextFragment` stores a string, and optional parameters which will override those
+            // of `Text` itself. This allows inlining differently formatted lines, words,
+            // or even individual letters, into the same block of text.
+            text: counter.to_string(),
+            color: Some(Color::new(1.0, 0.0, 0.0, 1.0)),
+            // The font name refers to a loaded TTF, stored inside the `GraphicsContext`.
+            // A default font always exists and maps to LiberationMono-Regular.
+            font: Some("LiberationMono-Regular".into()),
+            scale: Some(PxScale::from(10.0)),
+            // This doesn't do anything at this point; can be used to omit fields in declarations.
+            ..Default::default()
+        });
+        canvas.draw(&text, DrawParam::default());
+        Ok(())
+    }
 }
 impl EventHandler for Game {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
@@ -417,6 +437,7 @@ impl EventHandler for Game {
         self.view.draw(&mut canvas, ctx)?;
         self.draw_scene(&mut canvas, ctx)?;
         self.draw_player_pos(&mut canvas, ctx)?;
+        self.draw_fps_counter(&mut canvas, ctx)?;
         canvas.finish(ctx)
     }
 }
