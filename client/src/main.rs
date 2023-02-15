@@ -35,11 +35,11 @@ fn main() -> GameResult {
 
 fn connect(ip_address: String) -> Result<UdpSocket, std::io::Error> {
     // "0" port will pick available one
-    let socket = UdpSocket::bind(ip_address + ":0")?;
+    let socket = UdpSocket::bind(ip_address.to_owned() + ":0")?;
 
     // here we need to send to server address
     socket
-        .send_to("client connected".as_bytes(), "192.168.1.126:34254")
+        .send_to("client connected".as_bytes(), ip_address + ":34254")
         .expect("Error on send");
 
     // create buffer to save the socket message to
