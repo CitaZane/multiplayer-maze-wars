@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{Game, Map, SCREEN_WIDTH, VIEWPORT_HEIGHT, VIEWPORT_WIDTH};
+use crate::{Map, SCREEN_WIDTH, VIEWPORT_HEIGHT, VIEWPORT_WIDTH};
 use ggez::{
     glam::Vec2,
     graphics::{
@@ -122,6 +122,7 @@ impl View {
         input_dimensions: &Input,
     ) -> HashMap<String, Rect> {
         let mut elems = HashMap::new();
+
         elems.insert(
             "CREATE_GAME".to_string(),
             graphics::Rect::new(
@@ -191,30 +192,19 @@ impl View {
     }
 
     fn draw_join_game(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        // title
         self.draw_title(canvas, ctx)?;
-
-        // inputs
         self.draw_name_input(canvas, ctx, 200.0)?;
         self.draw_ip_input(canvas, ctx, 275.0)?;
-
-        // back arrow
         self.draw_back_arrow_img(canvas, ctx)?;
-
-        // buttons
         self.draw_join_game_button(canvas, ctx, 350.0)?;
 
         Ok(())
     }
 
     fn draw_create_game(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        // title
         self.draw_title(canvas, ctx)?;
-        // name input
-        self.draw_name_input(canvas, ctx, 200.0 - 5.0)?;
-        // back navigation
+        self.draw_name_input(canvas, ctx, 200.0)?;
         self.draw_back_arrow_img(canvas, ctx)?;
-        // btn
         self.draw_create_game_button(canvas, ctx, 275.0)?;
 
         Ok(())
@@ -268,7 +258,7 @@ impl View {
         } else {
             DrawMode::stroke(1.0)
         };
-
+        // input box
         let name_input = graphics::Mesh::new_rectangle(
             ctx,
             name_input_draw_mode,
@@ -288,12 +278,12 @@ impl View {
             &name_input_label,
             DrawParam::from(Vec2::new(
                 self.input_dimensions.horizontal_offset + self.input_dimensions.width / 2.0,
-                y - 5.0, // 200.
+                y - 5.0,
             ))
             .color(Color::BLACK),
         );
 
-        //text
+        // input box text
         let mut name_input_text = Text::new(self.name.contents());
         name_input_text.set_layout(TextLayout {
             v_align: TextAlign::Middle,
@@ -318,21 +308,20 @@ impl View {
         ctx: &mut Context,
         y: f32,
     ) -> GameResult {
-        let input_gap = 75.0;
         let ip_input_draw_mode = if self.ip_input_active {
             DrawMode::stroke(3.0)
         } else {
             DrawMode::stroke(1.0)
         };
-        // input
+        // input box
         let ip_input = graphics::Mesh::new_rectangle(
             ctx,
             ip_input_draw_mode,
             *self.element_rects.get("IP_INPUT").unwrap(),
             Color::BLACK,
         )?;
-
         canvas.draw(&ip_input, DrawParam::default());
+
         // label
         let mut ip_input_label = Text::new("IP ADDRESS");
         ip_input_label.set_layout(TextLayout {
@@ -347,13 +336,13 @@ impl View {
             ))
             .color(Color::BLACK),
         );
-        //ip input
+
+        //input box text
         let mut ip_input = Text::new(self.ip_address.contents());
         ip_input.set_layout(TextLayout {
             v_align: TextAlign::Middle,
             h_align: TextAlign::Begin,
         });
-
         canvas.draw(
             &ip_input,
             DrawParam::from(Vec2::new(
@@ -372,6 +361,16 @@ impl View {
         ctx: &mut Context,
         y: f32,
     ) -> GameResult {
+        // button rect
+        let join_game_btn = graphics::Mesh::new_rectangle(
+            ctx,
+            DrawMode::stroke(1.0),
+            *self.element_rects.get("JOIN_GAME").unwrap(),
+            Color::BLACK,
+        )?;
+        canvas.draw(&join_game_btn, DrawParam::default());
+
+        // button text
         let mut join_game_text = Text::new("Join game");
         join_game_text.set_layout(TextLayout {
             v_align: TextAlign::Middle,
@@ -386,15 +385,6 @@ impl View {
             .color(Color::BLACK),
         );
 
-        let join_game_btn = graphics::Mesh::new_rectangle(
-            ctx,
-            DrawMode::stroke(1.0),
-            *self.element_rects.get("JOIN_GAME").unwrap(),
-            Color::BLACK,
-        )?;
-
-        canvas.draw(&join_game_btn, DrawParam::default());
-
         Ok(())
     }
 
@@ -404,6 +394,16 @@ impl View {
         ctx: &mut Context,
         y: f32,
     ) -> GameResult {
+        // button rect
+        let create_game_btn = graphics::Mesh::new_rectangle(
+            ctx,
+            DrawMode::stroke(1.0),
+            *self.element_rects.get("CREATE_GAME").unwrap(),
+            Color::BLACK,
+        )?;
+        canvas.draw(&create_game_btn, DrawParam::default());
+
+        // button text
         let mut create_game_text = Text::new("Create game");
         create_game_text.set_layout(TextLayout {
             v_align: TextAlign::Middle,
@@ -418,15 +418,6 @@ impl View {
             .color(Color::BLACK),
         );
 
-        let create_game_btn = graphics::Mesh::new_rectangle(
-            ctx,
-            DrawMode::stroke(1.0),
-            *self.element_rects.get("CREATE_GAME").unwrap(),
-            Color::BLACK,
-        )?;
-
-        canvas.draw(&create_game_btn, DrawParam::default());
-
         Ok(())
     }
 
@@ -435,13 +426,13 @@ impl View {
         canvas: &mut graphics::Canvas,
         ctx: &mut Context,
     ) -> GameResult {
-        let img_box = graphics::Mesh::new_rectangle(
+        let img = graphics::Mesh::new_rectangle(
             ctx,
             DrawMode::stroke(1.0),
             *self.element_rects.get("BACK_ARROW_IMG").unwrap(),
             Color::BLACK,
         )?;
-        canvas.draw(&img_box, DrawParam::default());
+        canvas.draw(&img, DrawParam::default());
         canvas.draw(
             &self.back_arrow_image,
             DrawParam::from(Vec2::new(100.0, 100.0)).scale([0.1, 0.1]),
@@ -449,4 +440,9 @@ impl View {
 
         Ok(())
     }
+}
+// removes last letter from text input and returns the new Text
+pub fn remove_input_text_last_letter(mut text_input: String) -> Text {
+    text_input.pop();
+    Text::new(text_input)
 }
