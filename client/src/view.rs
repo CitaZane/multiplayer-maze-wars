@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{Game, Map, SCREEN_WIDTH, VIEWPORT_HEIGHT, VIEWPORT_WIDTH};
 use ggez::{
     glam::Vec2,
@@ -18,14 +20,14 @@ pub enum ViewType {
 
 pub struct View {
     pub current_view: ViewType,
-    pub elements: Vec<Element>,
-    button_dimensions: Button,
-    input_dimensions: Input,
+    pub element_rects: HashMap<String, Rect>, // holds text input and button rects
     pub ip_input_active: bool,
     pub name_input_active: bool,
     pub ip_address: Text,
     pub name: Text,
     back_arrow_image: Image,
+    button_dimensions: Button,
+    input_dimensions: Input,
 }
 
 pub struct Button {
@@ -41,11 +43,6 @@ pub struct Input {
     horizontal_offset: f32,
 }
 
-#[derive(Clone)]
-pub struct Element {
-    pub name: String,
-    pub rect: Rect,
-}
 impl View {
     pub fn new(ctx: &mut Context, view_type: ViewType) -> GameResult<View> {
         let button_dimensions = Button {
@@ -61,8 +58,8 @@ impl View {
             horizontal_offset: (SCREEN_WIDTH - 200.0) * 0.5,
         };
 
-        let elements = match view_type {
-            ViewType::Game(_) => Vec::new(),
+        let element_rects = match view_type {
+            ViewType::Game(_) => HashMap::new(),
             ViewType::MainMenu => View::get_main_menu_elements(&button_dimensions),
             ViewType::JoinGame => {
                 View::get_join_game_elements(&button_dimensions, &input_dimensions)
@@ -73,7 +70,7 @@ impl View {
         };
         Ok(View {
             current_view: view_type,
-            elements,
+            element_rects,
             button_dimensions,
             input_dimensions,
             ip_input_active: false,
@@ -94,77 +91,101 @@ impl View {
         Ok(())
     }
 
+    pub fn get_main_menu_elements(button_dimensions: &Button) -> HashMap<String, Rect> {
+        let mut elems = HashMap::new();
+        let buttons_gap = 75.0;
+
+        elems.insert(
+            "CREATE_GAME".to_string(),
+            graphics::Rect::new(
+                button_dimensions.horizontal_offset,
+                200.0,
+                button_dimensions.width,
+                button_dimensions.height,
+            ),
+        );
+        elems.insert(
+            "JOIN_GAME".to_string(),
+            graphics::Rect::new(
+                button_dimensions.horizontal_offset,
+                200.0 + buttons_gap,
+                button_dimensions.width,
+                button_dimensions.height,
+            ),
+        );
+
+        elems
+    }
+
     pub fn get_create_game_elements(
         button_dimensions: &Button,
         input_dimensions: &Input,
-    ) -> Vec<Element> {
-        let mut elems = Vec::new();
-
-        elems.push(Element {
-            name: "CREATE_GAME".to_string(),
-            rect: graphics::Rect::new(
+    ) -> HashMap<String, Rect> {
+        let mut elems = HashMap::new();
+        elems.insert(
+            "CREATE_GAME".to_string(),
+            graphics::Rect::new(
                 button_dimensions.horizontal_offset,
                 275.0,
                 button_dimensions.width,
                 button_dimensions.height,
             ),
-        });
-        elems.push(Element {
-            name: "NAME_INPUT".to_string(),
-            rect: graphics::Rect::new(
+        );
+        elems.insert(
+            "NAME_INPUT".to_string(),
+            graphics::Rect::new(
                 input_dimensions.horizontal_offset,
                 200.0,
                 input_dimensions.width,
                 input_dimensions.height,
             ),
-        });
-
-        elems.push(Element {
-            name: "BACK_ARROW_IMG".to_string(),
-            rect: graphics::Rect::new(100.0 - 6.0, 100.0 - 6.0, 256.0 * 0.15, 256.0 * 0.15),
-        });
+        );
+        elems.insert(
+            "BACK_ARROW_IMG".to_string(),
+            graphics::Rect::new(100.0 - 6.0, 100.0 - 6.0, 256.0 * 0.15, 256.0 * 0.15),
+        );
 
         elems
     }
     pub fn get_join_game_elements(
         button_dimensions: &Button,
         input_dimensions: &Input,
-    ) -> Vec<Element> {
-        let mut elems = Vec::new();
+    ) -> HashMap<String, Rect> {
+        let mut elems = HashMap::new();
         let input_gap = 75.0;
 
-        elems.push(Element {
-            name: "NAME_INPUT".to_string(),
-            rect: graphics::Rect::new(
+        elems.insert(
+            "NAME_INPUT".to_string(),
+            graphics::Rect::new(
                 input_dimensions.horizontal_offset,
                 200.0,
                 input_dimensions.width,
                 input_dimensions.height,
             ),
-        });
-        elems.push(Element {
-            name: "IP_INPUT".to_string(),
-            rect: graphics::Rect::new(
+        );
+        elems.insert(
+            "IP_INPUT".to_string(),
+            graphics::Rect::new(
                 input_dimensions.horizontal_offset,
                 200.0 + input_gap,
                 input_dimensions.width,
                 input_dimensions.height,
             ),
-        });
-        elems.push(Element {
-            name: "JOIN_GAME".to_string(),
-            rect: graphics::Rect::new(
+        );
+        elems.insert(
+            "JOIN_GAME".to_string(),
+            graphics::Rect::new(
                 button_dimensions.horizontal_offset,
                 200.0 + (input_gap * 2.0),
                 button_dimensions.width,
                 button_dimensions.height,
             ),
-        });
+        );
 
-        elems.push(Element {
-            name: "BACK_ARROW_IMG".to_string(),
-            rect: graphics::Rect::new(100.0 - 6.0, 100.0 - 6.0, 256.0 * 0.15, 256.0 * 0.15),
-        });
+        elems.insert(
+            "BACK_ARROW_IMG".to_string(),
+            graphics::Rect::new(100.0 - 6.0, 100.0 - 6.0, 256.0 * 0.15, 256.0 * 0.15),
+        );
 
         elems
     }
@@ -174,31 +195,14 @@ impl View {
         self.draw_title(canvas, ctx)?;
 
         // inputs
-        self.draw_name_input(canvas, ctx, 200.0 - 5.0)?;
-        self.draw_ip_input(canvas, ctx, 100.0)?;
+        self.draw_name_input(canvas, ctx, 200.0)?;
+        self.draw_ip_input(canvas, ctx, 275.0)?;
 
-        // back navigation
-        canvas.draw(
-            &self.back_arrow_image,
-            DrawParam::from(Vec2::new(100.0, 100.0)).scale([0.1, 0.1]),
-        );
+        // back arrow
+        self.draw_back_arrow_img(canvas, ctx)?;
 
         // buttons
-        self.draw_join_game_button(canvas, ctx, 200.0)?;
-
-        // buttons and inputs
-        // for elem in &self.elements {
-        //     let mut draw_mode = DrawMode::stroke(1.0);
-        //     if elem.name == "IP_INPUT" && self.ip_input_active
-        //         || elem.name == "NAME_INPUT" && self.name_input_active
-        //     {
-        //         draw_mode = DrawMode::stroke(3.0)
-        //     }
-
-        //     let elem = graphics::Mesh::new_rectangle(ctx, draw_mode, elem.rect, Color::BLACK)?;
-
-        //     canvas.draw(&elem, DrawParam::default())
-        // }
+        self.draw_join_game_button(canvas, ctx, 350.0)?;
 
         Ok(())
     }
@@ -209,39 +213,9 @@ impl View {
         // name input
         self.draw_name_input(canvas, ctx, 200.0 - 5.0)?;
         // back navigation
-        canvas.draw(
-            &self.back_arrow_image,
-            DrawParam::from(Vec2::new(100.0, 100.0)).scale([0.1, 0.1]),
-        );
-
-        // create game text
-        let mut create_game_text = Text::new("Create game");
-        create_game_text.set_layout(TextLayout {
-            v_align: TextAlign::Middle,
-            h_align: TextAlign::Middle,
-        });
-        canvas.draw(
-            &create_game_text,
-            DrawParam::from(Vec2::new(
-                self.button_dimensions.horizontal_offset + self.button_dimensions.width / 2.0,
-                275.0 + self.button_dimensions.height / 2.0,
-            ))
-            .color(Color::BLACK),
-        );
-
-        // button and inputs
-        for elem in &self.elements {
-            let mut draw_mode = DrawMode::stroke(1.0);
-            if elem.name == "IP_INPUT" && self.ip_input_active
-                || elem.name == "NAME_INPUT" && self.name_input_active
-            {
-                draw_mode = DrawMode::stroke(3.0)
-            }
-
-            let elem = graphics::Mesh::new_rectangle(ctx, draw_mode, elem.rect, Color::BLACK)?;
-
-            canvas.draw(&elem, DrawParam::default())
-        }
+        self.draw_back_arrow_img(canvas, ctx)?;
+        // btn
+        self.draw_create_game_button(canvas, ctx, 275.0)?;
 
         Ok(())
     }
@@ -261,78 +235,10 @@ impl View {
 
     fn draw_main_menu(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         self.draw_title(canvas, ctx)?;
-
-        // button text
-        let mut create_game_text = Text::new("Create game");
-        create_game_text.set_layout(TextLayout {
-            v_align: TextAlign::Middle,
-            h_align: TextAlign::Middle,
-        });
-        let mut join_game_text = Text::new("Join game");
-        join_game_text.set_layout(TextLayout {
-            v_align: TextAlign::Middle,
-            h_align: TextAlign::Middle,
-        });
-
-        let button_width = 125.0;
-        let button_horizontal_offset = (SCREEN_WIDTH - button_width) * 0.5;
-        for button in &self.elements {
-            let btn = graphics::Mesh::new_rectangle(
-                ctx,
-                DrawMode::stroke(1.0),
-                button.rect,
-                Color::BLACK,
-            )?;
-
-            canvas.draw(&btn, DrawParam::default())
-        }
-
-        // join game text
-        canvas.draw(
-            &join_game_text,
-            DrawParam::from(Vec2::new(
-                button_horizontal_offset + button_width / 2.0,
-                275.0 + 17.5,
-            ))
-            .color(Color::BLACK),
-        );
-        // start game text
-        canvas.draw(
-            &create_game_text,
-            DrawParam::from(Vec2::new(
-                button_horizontal_offset + button_width / 2.0,
-                200.0 + 17.5,
-            ))
-            .color(Color::BLACK),
-        );
+        self.draw_create_game_button(canvas, ctx, 200.0)?;
+        self.draw_join_game_button(canvas, ctx, 275.0)?;
 
         Ok(())
-    }
-
-    pub fn get_main_menu_elements(button_dimensions: &Button) -> Vec<Element> {
-        let mut elems = Vec::new();
-        let buttons_gap = 75.0;
-
-        elems.push(Element {
-            name: "CREATE_GAME".to_string(),
-            rect: graphics::Rect::new(
-                button_dimensions.horizontal_offset,
-                200.0,
-                button_dimensions.width,
-                button_dimensions.height,
-            ),
-        });
-        elems.push(Element {
-            name: "JOIN_GAME".to_string(),
-            rect: graphics::Rect::new(
-                button_dimensions.horizontal_offset,
-                200.0 + buttons_gap,
-                button_dimensions.width,
-                button_dimensions.height,
-            ),
-        });
-
-        elems
     }
 
     pub fn draw_title(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
@@ -357,19 +263,21 @@ impl View {
         ctx: &mut Context,
         y: f32,
     ) -> GameResult {
-        let draw_mode = DrawMode::stroke(1.0);
+        let name_input_draw_mode = if self.name_input_active {
+            DrawMode::stroke(3.0)
+        } else {
+            DrawMode::stroke(1.0)
+        };
 
-        // input
-        let name_input_rect = graphics::Rect::new(
-            self.input_dimensions.horizontal_offset,
-            200.0,
-            self.input_dimensions.width,
-            self.input_dimensions.height,
-        );
-        let name_input =
-            graphics::Mesh::new_rectangle(ctx, draw_mode, name_input_rect, Color::BLACK)?;
+        let name_input = graphics::Mesh::new_rectangle(
+            ctx,
+            name_input_draw_mode,
+            *self.element_rects.get("NAME_INPUT").unwrap(),
+            Color::BLACK,
+        )?;
 
         canvas.draw(&name_input, DrawParam::default());
+
         // label
         let mut name_input_label = Text::new("NAME");
         name_input_label.set_layout(TextLayout {
@@ -380,7 +288,7 @@ impl View {
             &name_input_label,
             DrawParam::from(Vec2::new(
                 self.input_dimensions.horizontal_offset + self.input_dimensions.width / 2.0,
-                y, // 200.
+                y - 5.0, // 200.
             ))
             .color(Color::BLACK),
         );
@@ -396,7 +304,7 @@ impl View {
             &name_input_text,
             DrawParam::from(Vec2::new(
                 self.input_dimensions.horizontal_offset + self.input_dimensions.padding,
-                200.0 + (self.input_dimensions.height / 2.0),
+                y + (self.input_dimensions.height / 2.0),
             ))
             .color(Color::BLACK),
         );
@@ -411,20 +319,20 @@ impl View {
         y: f32,
     ) -> GameResult {
         let input_gap = 75.0;
-
-        let draw_mode = DrawMode::stroke(1.0);
-
+        let ip_input_draw_mode = if self.ip_input_active {
+            DrawMode::stroke(3.0)
+        } else {
+            DrawMode::stroke(1.0)
+        };
         // input
-        let name_input_rect = graphics::Rect::new(
-            self.input_dimensions.horizontal_offset,
-            200.0,
-            self.input_dimensions.width,
-            self.input_dimensions.height,
-        );
-        let name_input =
-            graphics::Mesh::new_rectangle(ctx, draw_mode, name_input_rect, Color::BLACK)?;
+        let ip_input = graphics::Mesh::new_rectangle(
+            ctx,
+            ip_input_draw_mode,
+            *self.element_rects.get("IP_INPUT").unwrap(),
+            Color::BLACK,
+        )?;
 
-        canvas.draw(&name_input, DrawParam::default());
+        canvas.draw(&ip_input, DrawParam::default());
         // label
         let mut ip_input_label = Text::new("IP ADDRESS");
         ip_input_label.set_layout(TextLayout {
@@ -435,7 +343,7 @@ impl View {
             &ip_input_label,
             DrawParam::from(Vec2::new(
                 self.input_dimensions.horizontal_offset + self.input_dimensions.width / 2.0,
-                200.0 + input_gap - 5.0,
+                y - 5.0,
             ))
             .color(Color::BLACK),
         );
@@ -450,7 +358,7 @@ impl View {
             &ip_input,
             DrawParam::from(Vec2::new(
                 self.input_dimensions.horizontal_offset + self.input_dimensions.padding,
-                200.0 + input_gap + (self.input_dimensions.height / 2.0),
+                y + (self.input_dimensions.height / 2.0),
             ))
             .color(Color::BLACK),
         );
@@ -478,21 +386,14 @@ impl View {
             .color(Color::BLACK),
         );
 
-        let join_game_rect = graphics::Rect::new(
-            self.button_dimensions.horizontal_offset,
-            y,
-            self.button_dimensions.width,
-            self.button_dimensions.height,
-        );
-
-        let elem = graphics::Mesh::new_rectangle(
+        let join_game_btn = graphics::Mesh::new_rectangle(
             ctx,
             DrawMode::stroke(1.0),
-            join_game_rect,
+            *self.element_rects.get("JOIN_GAME").unwrap(),
             Color::BLACK,
         )?;
 
-        canvas.draw(&elem, DrawParam::default());
+        canvas.draw(&join_game_btn, DrawParam::default());
 
         Ok(())
     }
@@ -503,49 +404,47 @@ impl View {
         ctx: &mut Context,
         y: f32,
     ) -> GameResult {
-        let input_gap = 75.0;
-
-        let draw_mode = DrawMode::stroke(1.0);
-
-        // input
-        let name_input_rect = graphics::Rect::new(
-            self.input_dimensions.horizontal_offset,
-            200.0,
-            self.input_dimensions.width,
-            self.input_dimensions.height,
-        );
-        let name_input =
-            graphics::Mesh::new_rectangle(ctx, draw_mode, name_input_rect, Color::BLACK)?;
-
-        canvas.draw(&name_input, DrawParam::default());
-        // label
-        let mut ip_input_label = Text::new("IP ADDRESS");
-        ip_input_label.set_layout(TextLayout {
-            v_align: TextAlign::End,
+        let mut create_game_text = Text::new("Create game");
+        create_game_text.set_layout(TextLayout {
+            v_align: TextAlign::Middle,
             h_align: TextAlign::Middle,
         });
         canvas.draw(
-            &ip_input_label,
+            &create_game_text,
             DrawParam::from(Vec2::new(
-                self.input_dimensions.horizontal_offset + self.input_dimensions.width / 2.0,
-                200.0 + input_gap - 5.0,
+                self.button_dimensions.horizontal_offset + self.button_dimensions.width / 2.0,
+                y + self.button_dimensions.height / 2.0,
             ))
             .color(Color::BLACK),
         );
-        //ip input
-        let mut ip_input = Text::new(self.ip_address.contents());
-        ip_input.set_layout(TextLayout {
-            v_align: TextAlign::Middle,
-            h_align: TextAlign::Begin,
-        });
 
+        let create_game_btn = graphics::Mesh::new_rectangle(
+            ctx,
+            DrawMode::stroke(1.0),
+            *self.element_rects.get("CREATE_GAME").unwrap(),
+            Color::BLACK,
+        )?;
+
+        canvas.draw(&create_game_btn, DrawParam::default());
+
+        Ok(())
+    }
+
+    pub fn draw_back_arrow_img(
+        &self,
+        canvas: &mut graphics::Canvas,
+        ctx: &mut Context,
+    ) -> GameResult {
+        let img_box = graphics::Mesh::new_rectangle(
+            ctx,
+            DrawMode::stroke(1.0),
+            *self.element_rects.get("BACK_ARROW_IMG").unwrap(),
+            Color::BLACK,
+        )?;
+        canvas.draw(&img_box, DrawParam::default());
         canvas.draw(
-            &ip_input,
-            DrawParam::from(Vec2::new(
-                self.input_dimensions.horizontal_offset + self.input_dimensions.padding,
-                200.0 + input_gap + (self.input_dimensions.height / 2.0),
-            ))
-            .color(Color::BLACK),
+            &self.back_arrow_image,
+            DrawParam::from(Vec2::new(100.0, 100.0)).scale([0.1, 0.1]),
         );
 
         Ok(())

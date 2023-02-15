@@ -47,17 +47,17 @@ impl EventHandler for Game {
             match &self.view.current_view {
                 ViewType::Game(_) => {}
                 ViewType::MainMenu => {
-                    for elem in &self.view.elements {
-                        if x > elem.rect.x
-                            && x < elem.rect.x + elem.rect.w
-                            && y > elem.rect.y
-                            && y < elem.rect.y + elem.rect.h
+                    for (name, elem_rect) in &self.view.element_rects {
+                        if x > elem_rect.x
+                            && x < elem_rect.x + elem_rect.w
+                            && y > elem_rect.y
+                            && y < elem_rect.y + elem_rect.h
                         {
-                            if elem.name == "CREATE_GAME" {
+                            if name == "CREATE_GAME" {
                                 new_view = Some(ViewType::CreateGame);
 
                                 println!("Create game");
-                            } else if elem.name == "JOIN_GAME" {
+                            } else if name == "JOIN_GAME" {
                                 new_view = Some(ViewType::JoinGame);
                                 println!("Join game");
                             }
@@ -65,50 +65,45 @@ impl EventHandler for Game {
                     }
                 }
                 ViewType::JoinGame => {
-                    for elem in &self.view.elements {
-                        if x > elem.rect.x
-                            && x < elem.rect.x + elem.rect.w
-                            && y > elem.rect.y
-                            && y < elem.rect.y + elem.rect.h
+                    for (name, elem_rect) in &self.view.element_rects {
+                        if x > elem_rect.x
+                            && x < elem_rect.x + elem_rect.w
+                            && y > elem_rect.y
+                            && y < elem_rect.y + elem_rect.h
                         {
-                            if elem.name == "IP_INPUT" {
+                            if name == "IP_INPUT" {
                                 println!("IP input");
                                 self.view.ip_input_active = true;
                                 if self.view.name_input_active {
                                     self.view.name_input_active = false;
                                 }
-                            } else if elem.name == "NAME_INPUT" {
+                            } else if name == "NAME_INPUT" {
                                 self.view.name_input_active = true;
                                 if self.view.ip_input_active {
                                     self.view.ip_input_active = false;
                                 }
                                 println!("Name input")
-                            } else if elem.name == "JOIN_GAME" {
+                            } else if name == "JOIN_GAME" {
                                 new_view = Some(ViewType::Game(Map::new()));
                                 println!("Game");
-                            } else if elem.name == "BACK_ARROW_IMG" {
+                            } else if name == "BACK_ARROW_IMG" {
                                 new_view = Some(ViewType::MainMenu)
                             }
                         }
                     }
-                    // name input
-                    // ip input
-                    // join game btn
                 }
                 ViewType::CreateGame => {
-                    // name input
-                    // create game btn
-                    for elem in &self.view.elements {
-                        if x > elem.rect.x
-                            && x < elem.rect.x + elem.rect.w
-                            && y > elem.rect.y
-                            && y < elem.rect.y + elem.rect.h
+                    for (name, elem_rect) in &self.view.element_rects {
+                        if x > elem_rect.x
+                            && x < elem_rect.x + elem_rect.w
+                            && y > elem_rect.y
+                            && y < elem_rect.y + elem_rect.h
                         {
-                            if elem.name == "NAME_INPUT" {
+                            if name == "NAME_INPUT" {
                                 self.view.name_input_active = true;
-                            } else if elem.name == "CREATE_GAME" {
+                            } else if name == "CREATE_GAME" {
                                 new_view = Some(ViewType::Game(Map::new()));
-                            } else if elem.name == "BACK_ARROW_IMG" {
+                            } else if name == "BACK_ARROW_IMG" {
                                 new_view = Some(ViewType::MainMenu)
                             }
                         }
