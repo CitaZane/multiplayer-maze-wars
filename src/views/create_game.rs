@@ -1,7 +1,6 @@
-use std::process::Command;
+use local_ip_address::local_ip;
 use std::thread;
 use std::{collections::HashMap, net::UdpSocket};
-use local_ip_address::local_ip;
 
 use ggez::{
     graphics::{self, Rect, Text},
@@ -109,8 +108,14 @@ impl CreateGameStruct {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
-                    let output = thread::spawn(|| CreateGameStruct::server());
-                    _ = self.connect();
+                    let my_local_ip = local_ip().unwrap();
+
+                    thread::spawn(move || {
+                        CreateGameStruct::start_server(my_local_ip.to_string()).unwrap()
+                    });
+
+                    let name = self.name.contents();
+                    _ = CreateGameStruct::connect(my_local_ip.to_string(), name);
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
@@ -121,14 +126,16 @@ impl CreateGameStruct {
         new_view
     }
 
-    pub fn connect(&self) -> Result<UdpSocket, std::io::Error>{
+    pub fn connect(server_ip: String, name: String) -> Result<UdpSocket, std::io::Error> {
         let my_local_ip = local_ip().unwrap();
-
-        let socket = UdpSocket::bind(my_local_ip.to_string().to_owned() + ":0")?;
+        let socket = UdpSocket::bind(my_local_ip.to_string() + ":0")?;
 
         // here we need to send to server address
         socket
-            .send_to("client connected".as_bytes(), my_local_ip.to_string() + ":34254")
+            .send_to(
+                format!("{} connected", name).as_bytes(),
+                server_ip + ":34254",
+            )
             .expect("Error on send");
 
         // create buffer to save the socket message to
@@ -140,16 +147,12 @@ impl CreateGameStruct {
         Ok(socket)
     }
 
-    pub fn server() -> std::io::Result<()> {
-        let my_local_ip = local_ip().unwrap();
-        let socket = UdpSocket::bind(my_local_ip.to_string() + ":34254")?; // for UDP4/6
+    pub fn start_server(ip_address: String) -> std::io::Result<()> {
+        let socket = UdpSocket::bind(ip_address.clone() + ":34254")?; // for UDP4/6
 
         let mut buf = [0; 2048];
-        println!("Server started at: {}", my_local_ip.to_string() + ":34254");
+        println!("Server started at: {}", ip_address.to_string() + ":34254");
         loop {
-            // Receives a single datagram message on the socket.
-            // If `buf` is too small to hold
-            // the message, it will be cut off.
             let (amt, src) = socket.recv_from(&mut buf)?;
             let echo = std::str::from_utf8(&buf[..amt]).unwrap();
             println!("Message: {}", echo);
@@ -157,6 +160,7 @@ impl CreateGameStruct {
             // and send data back to origin.
             let buf = &mut buf[..amt];
             socket.send_to(buf, &src)?;
+            println!("hmm...")
         }
     }
 }

@@ -2,6 +2,7 @@ use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::{ContextBuilder, GameResult};
 use local_ip_address::local_ip;
+use std::env;
 use std::net::{SocketAddr, UdpSocket};
 mod game;
 pub use game::*;
@@ -15,7 +16,7 @@ fn main() -> GameResult {
     // initialize socket connection for client
     // let my_local_ip = local_ip().unwrap();
     // _ = connect(my_local_ip.to_string());
-
+    env::set_var("RUST_BACKTRACE", "1");
     // Make a Context.
     let c = Conf::new();
     let window_mode = WindowMode::default().dimensions(SCREEN_WIDTH, SCREEN_HEIGHT);

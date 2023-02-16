@@ -7,6 +7,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer, Input},
+    views::create_game::CreateGameStruct,
     View,
 };
 
@@ -138,6 +139,13 @@ impl JoinGameStruct {
                     }
                 } else if name == "JOIN_GAME" {
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                    let name = self.name.contents();
+                    let server_ip = self.ip_address.contents();
+
+                    CreateGameStruct::connect(server_ip, name).unwrap();
+
+                    // println!("IP address {}", ip_address);
+                    // println!("Name {}", name);
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
                 }
