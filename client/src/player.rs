@@ -7,7 +7,7 @@ pub struct Player {
     pub camera_plane:Vec2,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Direction{
     Up,
     Down,
@@ -34,6 +34,54 @@ impl Player {
             dir:Direction::Right,
             camera_plane:Vec2 { x:0.0, y: 0.65 },
         }
+    }
+    pub fn go_forward(&mut self, maze:&Vec<Vec<i32>>){
+        self.go(maze, self.dir.clone());
+    }
+    pub fn go_backward(&mut self, maze:&Vec<Vec<i32>>){
+        let direction = match self.dir{
+            Direction::Right => Direction::Left,
+            Direction::Down =>Direction::Up,
+            Direction::Left => Direction::Right,
+            Direction::Up => Direction::Down,
+        };
+        self.go(maze, direction);
+    }
+    pub fn go(&mut self, maze:&Vec<Vec<i32>>, direction:Direction){
+        match direction {
+            Direction::Right => {
+                if self.pos.x >= (maze[0].len() - 1) as f32{
+                    return
+                }
+                if maze[self.pos.y as usize][self.pos.x as usize +1] == 0{
+                    self.pos.x +=1.
+                }
+            },
+            Direction::Down =>{
+                if self.pos.x >= (maze.len() - 1) as f32{
+                    return
+                }
+                if maze[self.pos.y as usize +1][self.pos.x as usize] == 0{
+                    self.pos.y +=1.
+                }
+            },
+            Direction::Left => {
+                if self.pos.x < 1.0{
+                    return
+                }
+                if maze[self.pos.y as usize][self.pos.x as usize -1] == 0{
+                    self.pos.x -=1.
+                }
+            },
+            Direction::Up => {
+                if self.pos.y < 1.0{
+                    return
+                }
+                if maze[self.pos.y as usize -1][self.pos.x as usize] == 0{
+                    self.pos.y -=1.
+                }
+            },
+        };
     }
     pub fn turn_right(&mut self){
         self.dir = match self.dir {
