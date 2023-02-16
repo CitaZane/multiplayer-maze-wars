@@ -1,6 +1,6 @@
 use ggez::{
     graphics::{self, Color, DrawParam, Mesh},
-    Context, GameResult
+    Context, GameResult, glam::Vec2
 };
 use vect::vector2::Vector2;
 use crate::{VIEWPORT_HEIGHT, SCREEN_WIDTH};
@@ -81,7 +81,7 @@ impl Map {
             vec![1; 33],
         ]
     }
-    pub fn get_coordinates_for_pos(&self, pos: &Vector2)-> (f32,f32){
+    pub fn get_coordinates_for_pos(&self, pos: &Vec2)-> (f32,f32){
         let x = H_OFFSET + pos.x as f32 * TILE_SIZE;
         let y = V_OFFSET + pos.y as f32 *TILE_SIZE;
         (x,y)

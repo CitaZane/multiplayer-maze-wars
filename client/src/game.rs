@@ -1,6 +1,7 @@
 use ggez::glam::Vec2;
 use vect::vector2::Vector2;
 pub use crate::map::Map;
+use crate::player::Direction;
 pub use crate::player::Player;
 pub use crate::view::View;
 use crate::SCREEN_WIDTH;
@@ -38,9 +39,9 @@ impl Game {
         let mut buffer:Vec<f32> = vec![]; //used for drawing opponents
         // calculate rays for ech pixel in horizontal direction
         for i in 0..VIEWPORT_WIDTH as i32 {
-            let camera_x = (2 * i) as f64 / VIEWPORT_WIDTH as f64 - 1.0;
-            let ray_dir_x = self.player.dir.x + self.player.camera_plane.x * camera_x;
-            let ray_dir_y = self.player.dir.y + self.player.camera_plane.y * camera_x;
+            let camera_x = (2 * i) as f32 / VIEWPORT_WIDTH as f32 - 1.0;
+            let ray_dir_x = self.player.dir.vec().x + self.player.camera_plane.x * camera_x;
+            let ray_dir_y = self.player.dir.vec().y + self.player.camera_plane.y * camera_x;
 
             //which box of the map we're in
             let mut map_x = self.player.pos.x as i32;
@@ -67,17 +68,17 @@ impl Game {
             let player_y = self.player.pos.y + 0.5; //center player in square
             if ray_dir_x < 0.0 {
                 step_x = -1;
-                side_dist_x = (player_x - map_x as f64) * delta_dist_x;
+                side_dist_x = (player_x - map_x as f32) * delta_dist_x;
             } else {
                 step_x = 1;
-                side_dist_x = (map_x as f64 + 1.0 - player_x) * delta_dist_x;
+                side_dist_x = (map_x as f32 + 1.0 - player_x) * delta_dist_x;
             }
             if ray_dir_y < 0.0 {
                 step_y = -1;
-                side_dist_y = (player_y - map_y as f64) * delta_dist_y;
+                side_dist_y = (player_y - map_y as f32) * delta_dist_y;
             } else {
                 step_y = 1;
-                side_dist_y = (map_y as f64 + 1.0 - player_y) * delta_dist_y;
+                side_dist_y = (map_y as f32 + 1.0 - player_y) * delta_dist_y;
             }
 
             while hit == 0 {
@@ -112,7 +113,7 @@ impl Game {
             //Calculate height of line to draw on screen
             let line_height = VIEWPORT_HEIGHT / prep_wall_dist as f32;
             let mut side_type = 1;
-            if self.player.dir.x == 0.{side_type =0}
+            if self.player.dir.vec().x == 0.{side_type =0}
             if !edge && side != side_type{
                 if line_height.round() != last_height.round() {
                     edge = true
@@ -138,19 +139,20 @@ impl Game {
     fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context, buffer:Vec<f32>) -> GameResult{
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
+        let player_dir = self.player.dir.vec();
         for i in 0..self.opponents.len(){
              //translate sprite position to relative to camera
             let sprite_pos = self.opponents[i].pos - self.player.pos;
             //transform sprite with the inverse camera matrix
-            let inv_det = 1.0 / (self.player.camera_plane.x * self.player.dir.y - self.player.dir.x * self.player.camera_plane.y);
+            let inv_det = 1.0 / (self.player.camera_plane.x * player_dir.y - player_dir.x * self.player.camera_plane.y);
 
-            let transform_x = inv_det * (self.player.dir.y * sprite_pos.x - self.player.dir.x * sprite_pos.y);
+            let transform_x = inv_det * (player_dir.y * sprite_pos.x - player_dir.x * sprite_pos.y);
             let transform_y = inv_det * (-self.player.camera_plane.y * sprite_pos.x + self.player.camera_plane.x * sprite_pos.y); //depth
-            let sprite_screen_x = (VIEWPORT_WIDTH as f64/ 2.0) * (1.+ transform_x/transform_y);
+            let sprite_screen_x = (VIEWPORT_WIDTH as f32/ 2.0) * (1.+ transform_x/transform_y);
 
             // calc the height of the sprite plane
             let h = 165.0;
-            let sprite_height = (VIEWPORT_HEIGHT as f64 /transform_y).abs() as f32;
+            let sprite_height = (VIEWPORT_HEIGHT as f32 /transform_y).abs() as f32;
             let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
             let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT /2.0;
 
@@ -160,16 +162,12 @@ impl Game {
             let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
             let x = (sprite_x_start  + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
             let y = sprite_y_end as f32 + y_offset - scaled_size ;
-            if transform_y > 0.0 && sprite_x_start > 0.0 && sprite_x_end < VIEWPORT_WIDTH+x_offset && buffer[(x  - x_offset) as usize]+y_offset < y+ scaled_size{
+            if transform_y >= 0.0 && sprite_x_start > 0.0 && sprite_x_end < VIEWPORT_WIDTH+x_offset && buffer[(x  - x_offset) as usize]+y_offset < y+ scaled_size{
                 let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
                 let scale = scaled_size / player_img.height() as f32 * 1.2;
                 canvas.draw(&player_img, DrawParam::default()
                 .dest([x - scaled_size*0.15 , y])
                 .scale([scale,scale]));
-                // let point = graphics::Rect::new(x, y, scaled_size, scaled_size);
-
-                // let mesh = Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), point, Color::RED)?;
-                // canvas.draw(&mesh, DrawParam::default());   
             }
             }
         Ok(())
@@ -286,9 +284,9 @@ impl EventHandler for Game {
         // }
         if ctx.keyboard.is_key_pressed(KeyCode::Up) {
             match self.player.dir {
-                Vector2 { x: 1., y: 0. } => {
+                Direction::Right => {
                     // Looking Right
-                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f64 {
+                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f32 {
                         if self.map.0.clone().unwrap()[self.player.pos.y as usize]
                             [(self.player.pos.x + 1.) as usize]
                             == 1
@@ -299,9 +297,9 @@ impl EventHandler for Game {
                         }
                     }
                 }
-                Vector2 { x: 0., y: 1. } => {
+                Direction::Down => {
                     // Down
-                    if self.player.pos.x < (self.map.0.clone().unwrap().len() - 1) as f64 {
+                    if self.player.pos.x < (self.map.0.clone().unwrap().len() - 1) as f32 {
                         if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
                             [(self.player.pos.x) as usize]
                             == 1
@@ -312,7 +310,7 @@ impl EventHandler for Game {
                         }
                     }
                 }
-                Vector2 { x: -1., y: 0. } => {
+                Direction::Left => {
                     //  Left
                     if self.player.pos.x >= 1. {
                         if self.map.0.clone().unwrap()[self.player.pos.y as usize]
@@ -325,7 +323,7 @@ impl EventHandler for Game {
                         }
                     }
                 }
-                Vector2 { x: 0., y: -1. } => {
+                Direction::Up=> {
                     // Up
                     if self.player.pos.y >= 1. {
                         if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
@@ -343,7 +341,7 @@ impl EventHandler for Game {
         }
         if ctx.keyboard.is_key_pressed(KeyCode::Down) {
             match self.player.dir {
-                Vector2 { x: 1., y: 0. } => {
+                Direction::Right=> {
                     // Right
                     if self.player.pos.x >= 1. {
                         if self.map.0.clone().unwrap()[self.player.pos.y as usize]
@@ -356,7 +354,7 @@ impl EventHandler for Game {
                         }
                     }
                 }
-                Vector2 { x: 0., y: 1. } => {
+                Direction::Down => {
                     // Down
                     if self.player.pos.y >= 1. {
                         if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
@@ -369,9 +367,9 @@ impl EventHandler for Game {
                         }
                     }
                 }
-                Vector2 { x: -1., y: 0. } => {
+                Direction::Left => {
                     //  Left
-                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f64 {
+                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f32 {
                         if self.map.0.clone().unwrap()[self.player.pos.y as usize]
                             [(self.player.pos.x + 1.) as usize]
                             == 1
@@ -382,9 +380,9 @@ impl EventHandler for Game {
                         }
                     }
                 }
-                Vector2 { x: 0., y: -1. } => {
+                Direction::Up => {
                     // Up
-                    if self.player.pos.y < (self.map.0.clone().unwrap().len() - 1) as f64 {
+                    if self.player.pos.y < (self.map.0.clone().unwrap().len() - 1) as f32 {
                         if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
                             [(self.player.pos.x) as usize]
                             == 1
@@ -399,55 +397,10 @@ impl EventHandler for Game {
             }
         }
         if ctx.keyboard.is_key_pressed(KeyCode::Left) {
-            match self.player.dir {
-                Vector2 { x: 1., y: 0. } => {
-                    // Looking Right
-                    self.player.dir = Vector2 { x: 0., y: -1. };
-                    self.player.camera_plane = Vector2 { x: 0.65, y: 0.0 }
-                }
-                Vector2 { x: 0., y: 1. } => {
-                    // Down
-                    self.player.dir = Vector2 { x: 1., y: 0. };
-                    self.player.camera_plane = Vector2 { x: 0.0, y: 0.65 }
-                }
-                Vector2 { x: -1., y: 0. } => {
-                    // Left
-                    self.player.dir = Vector2 { x: 0., y: 1. };
-                    self.player.camera_plane = Vector2 { x: -0.65, y: 0. }
-                }
-                Vector2 { x: 0., y: -1. } => {
-                    // Up
-                    self.player.dir = Vector2 { x: -1., y: 0. };
-                    self.player.camera_plane = Vector2 { x: 0., y: -0.65 }
-                }
-                _ => (),
-            }
+            self.player.turn_left();
         }
         if ctx.keyboard.is_key_pressed(KeyCode::Right) {
-            match self.player.dir {
-                Vector2 { x: 1., y: 0. } => {
-                    // Looking Right
-                    self.player.dir = Vector2 { x: 0., y: 1. };
-                    self.player.camera_plane = Vector2 { x: -0.65, y: 0. }
-                }
-                Vector2 { x: 0., y: 1. } => {
-                    // Down
-                    self.player.dir = Vector2 { x: -1., y: 0. };
-                    self.player.camera_plane = Vector2 { x: 0., y: -0.65 }
-                }
-                Vector2 { x: -1., y: 0. } => {
-                    // Left
-                    self.player.dir = Vector2 { x: 0., y: -1. };
-                    self.player.camera_plane = Vector2 { x: 0.65, y: 0.0 }
-                }
-                Vector2 { x: 0., y: -1. } => {
-                    // Up
-                    self.player.dir = Vector2 { x: 1., y: 0. };
-                    self.player.camera_plane = Vector2 { x: 0.0, y: 0.65 }
-                }
-
-                _ => (),
-            }
+            self.player.turn_right();
         }
         Ok(())
     }
