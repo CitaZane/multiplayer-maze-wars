@@ -7,6 +7,7 @@ use ggez::{
     Context, GameResult,
 };
 
+use crate::server::Server;
 use crate::{
     drawer::{Button, Drawer, Input},
     View,
@@ -109,13 +110,18 @@ impl CreateGameStruct {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
                     let my_local_ip = local_ip().unwrap();
+                    let name = self.name.contents();
+                    let mut server = Server::new(my_local_ip);
 
                     thread::spawn(move || {
-                        CreateGameStruct::start_server(my_local_ip.to_string()).unwrap()
+                        // creating new server just so the thread has its own copy. I dont think this solution will work.
+                        // we will change it when problems will occur
+                        let server = Server::new(my_local_ip);
+                        server.start().unwrap();
                     });
 
-                    let name = self.name.contents();
-                    _ = CreateGameStruct::connect(my_local_ip.to_string(), name);
+                    server.connect_client(name).unwrap();
+
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
@@ -124,43 +130,5 @@ impl CreateGameStruct {
         }
 
         new_view
-    }
-
-    pub fn connect(server_ip: String, name: String) -> Result<UdpSocket, std::io::Error> {
-        let my_local_ip = local_ip().unwrap();
-        let socket = UdpSocket::bind(my_local_ip.to_string() + ":0")?;
-
-        // here we need to send to server address
-        socket
-            .send_to(
-                format!("{} connected", name).as_bytes(),
-                server_ip + ":34254",
-            )
-            .expect("Error on send");
-
-        // create buffer to save the socket message to
-        let mut buf = [0; 2048];
-
-        // load the message from the server to buffer and panic if any error happens
-        socket.recv_from(&mut buf).expect("Didnt receive any data");
-
-        Ok(socket)
-    }
-
-    pub fn start_server(ip_address: String) -> std::io::Result<()> {
-        let socket = UdpSocket::bind(ip_address.clone() + ":34254")?; // for UDP4/6
-
-        let mut buf = [0; 2048];
-        println!("Server started at: {}", ip_address.to_string() + ":34254");
-        loop {
-            let (amt, src) = socket.recv_from(&mut buf)?;
-            let echo = std::str::from_utf8(&buf[..amt]).unwrap();
-            println!("Message: {}", echo);
-            // Redeclare `buf` as slice of the received data
-            // and send data back to origin.
-            let buf = &mut buf[..amt];
-            socket.send_to(buf, &src)?;
-            println!("hmm...")
-        }
     }
 }

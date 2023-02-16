@@ -1,4 +1,8 @@
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    net::{IpAddr, Ipv4Addr},
+    str::FromStr,
+};
 
 use ggez::{
     graphics::{self, Rect, Text},
@@ -7,6 +11,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer, Input},
+    server::Server,
     views::create_game::CreateGameStruct,
     View,
 };
@@ -138,14 +143,13 @@ impl JoinGameStruct {
                         self.ip_input_active = false;
                     }
                 } else if name == "JOIN_GAME" {
-                    new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                     let name = self.name.contents();
                     let server_ip = self.ip_address.contents();
+                    let mut server =
+                        Server::new(IpAddr::from(Ipv4Addr::from_str(&server_ip).unwrap()));
+                    server.connect_client(name).unwrap();
 
-                    CreateGameStruct::connect(server_ip, name).unwrap();
-
-                    // println!("IP address {}", ip_address);
-                    // println!("Name {}", name);
+                    new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
                 }
