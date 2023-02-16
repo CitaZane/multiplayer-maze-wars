@@ -1,19 +1,24 @@
+use crate::{SCREEN_WIDTH, VIEWPORT_HEIGHT};
 use ggez::{
-    graphics::{self, Color, DrawParam, Mesh},
-    Context, GameResult, glam::Vec2
+    graphics::{self, Color, DrawParam, Mesh, Image},
+    Context, GameResult, glam::Vec2,
 };
-use vect::vector2::Vector2;
-use crate::{VIEWPORT_HEIGHT, SCREEN_WIDTH};
 const TILE_SIZE: f32 = 9.0;
 const MAP_WIDTH: f32 = 33.0;
-const H_OFFSET: f32 = (SCREEN_WIDTH - MAP_WIDTH * TILE_SIZE) /2.0;
+const H_OFFSET: f32 = (SCREEN_WIDTH - MAP_WIDTH * TILE_SIZE) / 2.0;
 const V_OFFSET: f32 = VIEWPORT_HEIGHT + 20.0 * 2.0;
-pub struct Map(pub Option<Vec<Vec<i32>>>);
+pub struct Map {
+    pub maze: Vec<Vec<i32>>,
+    graphics: Vec<Mesh>,
+    pub player_arrow: Image,
+}
 // Map size 33X17
 impl Map {
-    pub fn new() -> Self {
-        let m = Map::level_one();
-        Map(Some(m))
+    pub fn new(ctx: &mut Context) -> Self {
+        let maze = Map::level_one();
+        let graphics = Map::register_graphics(&maze, ctx);
+        let player_arrow = Image::from_path(ctx, "/arrow.png").expect("Arrow image missing");
+        Map { maze, graphics , player_arrow}
     }
     fn level_one() -> Vec<Vec<i32>> {
         vec![
@@ -81,16 +86,18 @@ impl Map {
             vec![1; 33],
         ]
     }
-    pub fn get_coordinates_for_pos(&self, pos: &Vec2)-> (f32,f32){
+    pub fn get_coordinates_for_pos(&self, pos: &Vec2) -> (f32, f32) {
         let x = H_OFFSET + pos.x as f32 * TILE_SIZE;
-        let y = V_OFFSET + pos.y as f32 *TILE_SIZE;
-        (x,y)
+        let y = V_OFFSET + pos.y as f32 * TILE_SIZE;
+        (x, y)
     }
-    pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        let map = self.0.as_ref().unwrap();
-        for row in 0..map.len() {
-            for col in 0..map[row].len() {
-                if map[row][col] == 0 {
+
+    fn register_graphics(maze: &Vec<Vec<i32>>, ctx: &mut Context) -> Vec<Mesh> {
+        let mut graphics = vec![];
+
+        for row in 0..maze.len() {
+            for col in 0..maze[row].len() {
+                if maze[row][col] == 0 {
                     continue;
                 }
                 let y = row as f32 * TILE_SIZE + V_OFFSET;
@@ -101,9 +108,17 @@ impl Map {
                     graphics::DrawMode::fill(),
                     rect,
                     Color::from_rgb(0, 0, 0),
-                )?;
-                canvas.draw(&mesh, DrawParam::default());
+                )
+                .unwrap();
+                graphics.push(mesh)
             }
+        }
+        graphics
+    }
+
+    pub fn draw(&self, canvas: &mut graphics::Canvas, _ctx: &mut Context) -> GameResult {
+        for mesh in self.graphics.iter() {
+            canvas.draw(mesh, DrawParam::default());
         }
         Ok(())
     }

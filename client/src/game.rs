@@ -1,12 +1,11 @@
 use ggez::glam::Vec2;
-use vect::vector2::Vector2;
 pub use crate::map::Map;
 use crate::player::Direction;
 pub use crate::player::Player;
 pub use crate::view::View;
 use crate::SCREEN_WIDTH;
 use ggez::event::EventHandler;
-use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh};
+use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, Text, PxScale, TextFragment};
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
@@ -21,11 +20,11 @@ pub struct Game {
 }
 // 17 x 33
 impl Game {
-    pub fn new(_ctx: &mut Context) -> Self {
-        let opponent = Player::new();
+    pub fn new(ctx: &mut Context) -> Self {
         // Load/create resources such as images here.
+        let opponent = Player::new();
         Self {
-            map: Map::new(),
+            map: Map::new(ctx),
             view: View::new(),
             player: Player::new(),
             opponents:vec![opponent],
@@ -33,7 +32,7 @@ impl Game {
         }
     }
     fn draw_scene(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        let maze = self.map.0.as_ref().unwrap();
+        let maze = &self.map.maze;
         let mut last_side = 0;
         let mut last_height: f32 = 0.;
         let mut buffer:Vec<f32> = vec![]; //used for drawing opponents
@@ -258,18 +257,37 @@ impl Game {
         Ok(())
     }
     fn draw_player_pos(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        let arrow_img = graphics::Image::from_path(ctx, "/arrow.png")?;
+        // let arrow_img = graphics::Image::from_path(ctx, "/arrow.png")?;
         let (x, y) = self.map.get_coordinates_for_pos(&self.player.pos);
         let rot = self.player.get_rotation();
         let (x_comp, y_comp)=self.player.get_rotation_compensaion();
         let scale = 0.6;
-        let size = arrow_img.height();
+        let size = self.map.player_arrow.height();
         let x = x + size as f32*scale  * x_comp;
         let y = y + size as f32*scale  * y_comp;
-        canvas.draw(&arrow_img, DrawParam::default()
+        canvas.draw(&self.map.player_arrow, DrawParam::default()
         .dest([x , y])
         .scale([scale,scale])
         .rotation(rot));
+        Ok(())
+    }
+    fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult{
+        let counter = ctx.time.fps();
+        // let text = Text::new(counter.to_string());
+        let text = Text::new(TextFragment {
+            // `TextFragment` stores a string, and optional parameters which will override those
+            // of `Text` itself. This allows inlining differently formatted lines, words,
+            // or even individual letters, into the same block of text.
+            text: counter.to_string(),
+            color: Some(Color::new(1.0, 0.0, 0.0, 1.0)),
+            // The font name refers to a loaded TTF, stored inside the `GraphicsContext`.
+            // A default font always exists and maps to LiberationMono-Regular.
+            font: Some("LiberationMono-Regular".into()),
+            scale: Some(PxScale::from(10.0)),
+            // This doesn't do anything at this point; can be used to omit fields in declarations.
+            ..Default::default()
+        });
+        canvas.draw(&text, DrawParam::default());
         Ok(())
     }
 }
@@ -286,8 +304,8 @@ impl EventHandler for Game {
             match self.player.dir {
                 Direction::Right => {
                     // Looking Right
-                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f32 {
-                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                    if self.player.pos.x < (self.map.maze[0].len() - 1) as f32 {
+                        if self.map.maze[self.player.pos.y as usize]
                             [(self.player.pos.x + 1.) as usize]
                             == 1
                         {
@@ -299,8 +317,8 @@ impl EventHandler for Game {
                 }
                 Direction::Down => {
                     // Down
-                    if self.player.pos.x < (self.map.0.clone().unwrap().len() - 1) as f32 {
-                        if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
+                    if self.player.pos.x < (self.map.maze.len() - 1) as f32 {
+                        if self.map.maze[(self.player.pos.y + 1.) as usize]
                             [(self.player.pos.x) as usize]
                             == 1
                         {
@@ -313,7 +331,7 @@ impl EventHandler for Game {
                 Direction::Left => {
                     //  Left
                     if self.player.pos.x >= 1. {
-                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                        if self.map.maze[self.player.pos.y as usize]
                             [(self.player.pos.x - 1.) as usize]
                             == 1
                         {
@@ -326,7 +344,7 @@ impl EventHandler for Game {
                 Direction::Up=> {
                     // Up
                     if self.player.pos.y >= 1. {
-                        if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
+                        if self.map.maze[(self.player.pos.y - 1.) as usize]
                             [(self.player.pos.x) as usize]
                             == 1
                         {
@@ -344,7 +362,7 @@ impl EventHandler for Game {
                 Direction::Right=> {
                     // Right
                     if self.player.pos.x >= 1. {
-                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                        if self.map.maze[self.player.pos.y as usize]
                             [(self.player.pos.x - 1.) as usize]
                             == 1
                         {
@@ -357,7 +375,7 @@ impl EventHandler for Game {
                 Direction::Down => {
                     // Down
                     if self.player.pos.y >= 1. {
-                        if self.map.0.clone().unwrap()[(self.player.pos.y - 1.) as usize]
+                        if self.map.maze[(self.player.pos.y - 1.) as usize]
                             [(self.player.pos.x) as usize]
                             == 1
                         {
@@ -369,8 +387,8 @@ impl EventHandler for Game {
                 }
                 Direction::Left => {
                     //  Left
-                    if self.player.pos.x < (self.map.0.clone().unwrap()[0].len() - 1) as f32 {
-                        if self.map.0.clone().unwrap()[self.player.pos.y as usize]
+                    if self.player.pos.x < (self.map.maze[0].len() - 1) as f32 {
+                        if self.map.maze[self.player.pos.y as usize]
                             [(self.player.pos.x + 1.) as usize]
                             == 1
                         {
@@ -382,8 +400,8 @@ impl EventHandler for Game {
                 }
                 Direction::Up => {
                     // Up
-                    if self.player.pos.y < (self.map.0.clone().unwrap().len() - 1) as f32 {
-                        if self.map.0.clone().unwrap()[(self.player.pos.y + 1.) as usize]
+                    if self.player.pos.y < (self.map.maze.len() - 1) as f32 {
+                        if self.map.maze[(self.player.pos.y + 1.) as usize]
                             [(self.player.pos.x) as usize]
                             == 1
                         {
@@ -411,6 +429,7 @@ impl EventHandler for Game {
         self.view.draw(&mut canvas, ctx)?;
         self.draw_scene(&mut canvas, ctx)?;
         self.draw_player_pos(&mut canvas, ctx)?;
+        self.draw_fps_counter(&mut canvas, ctx)?;
         canvas.finish(ctx)
     }
 }
