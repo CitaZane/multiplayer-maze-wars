@@ -13,8 +13,8 @@ const SCREEN_HEIGHT: f32 = 800.0;
 
 fn main() -> GameResult {
     // initialize socket connection for client
-    let my_local_ip = local_ip().unwrap();
-    _ = connect(my_local_ip.to_string());
+    // let my_local_ip = local_ip().unwrap();
+    // _ = connect(my_local_ip.to_string());
 
     // Make a Context.
     let c = Conf::new();
@@ -34,20 +34,20 @@ fn main() -> GameResult {
     event::run(ctx, event_loop, game);
 }
 
-fn connect(ip_address: String) -> Result<UdpSocket, std::io::Error> {
-    // "0" port will pick available one
-    let socket = UdpSocket::bind(ip_address.to_owned() + ":0")?;
+// fn connect(ip_address: String) -> Result<UdpSocket, std::io::Error> {
+//     // "0" port will pick available one
+//     let socket = UdpSocket::bind(ip_address.to_owned() + ":0")?;
 
-    // here we need to send to server address
-    socket
-        .send_to("client connected".as_bytes(), ip_address + ":34254")
-        .expect("Error on send");
+//     // here we need to send to server address
+//     socket
+//         .send_to("client connected".as_bytes(), ip_address + ":34254")
+//         .expect("Error on send");
 
-    // create buffer to save the socket message to
-    let mut buf = [0; 2048];
+//     // create buffer to save the socket message to
+//     let mut buf = [0; 2048];
 
-    // load the message from the server to buffer and panic if any error happens
-    socket.recv_from(&mut buf).expect("Didnt receive any data");
+//     // load the message from the server to buffer and panic if any error happens
+//     socket.recv_from(&mut buf).expect("Didnt receive any data");
 
-    Ok(socket)
-}
+//     Ok(socket)
+// }
