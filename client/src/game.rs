@@ -1,6 +1,5 @@
 use ggez::glam::Vec2;
 pub use crate::map::Map;
-use crate::player::Direction;
 pub use crate::player::Player;
 pub use crate::view::View;
 use crate::SCREEN_WIDTH;
@@ -11,8 +10,6 @@ use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
 pub struct Game {
-    // Your state here...
-    // viewport
     map: Map,
     view: View,
     player: Player,
@@ -28,7 +25,6 @@ impl Game {
             view: View::new(),
             player: Player::new(),
             opponents:vec![opponent],
-            // ...
         }
     }
     fn draw_scene(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
@@ -256,21 +252,6 @@ impl Game {
         canvas.draw(&mesh, DrawParam::default());
         Ok(())
     }
-    fn draw_player_pos(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        // let arrow_img = graphics::Image::from_path(ctx, "/arrow.png")?;
-        let (x, y) = self.map.get_coordinates_for_pos(&self.player.pos);
-        let rot = self.player.get_rotation();
-        let (x_comp, y_comp)=self.player.get_rotation_compensaion();
-        let scale = 0.6;
-        let size = self.map.player_arrow.height();
-        let x = x + size as f32*scale  * x_comp;
-        let y = y + size as f32*scale  * y_comp;
-        canvas.draw(&self.map.player_arrow, DrawParam::default()
-        .dest([x , y])
-        .scale([scale,scale])
-        .rotation(rot));
-        Ok(())
-    }
     fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult{
         let counter = ctx.time.fps();
         // let text = Text::new(counter.to_string());
@@ -313,7 +294,7 @@ impl EventHandler for Game {
         self.map.draw(&mut canvas, ctx)?;
         self.view.draw(&mut canvas, ctx)?;
         self.draw_scene(&mut canvas, ctx)?;
-        self.draw_player_pos(&mut canvas, ctx)?;
+        self.map.draw_player_position(&mut canvas, &self.player)?;
         self.draw_fps_counter(&mut canvas, ctx)?;
         canvas.finish(ctx)
     }

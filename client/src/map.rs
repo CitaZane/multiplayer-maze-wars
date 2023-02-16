@@ -1,4 +1,4 @@
-use crate::{SCREEN_WIDTH, VIEWPORT_HEIGHT};
+use crate::{SCREEN_WIDTH, VIEWPORT_HEIGHT, Player};
 use ggez::{
     graphics::{self, Color, DrawParam, Mesh, Image},
     Context, GameResult, glam::Vec2,
@@ -120,6 +120,21 @@ impl Map {
         for mesh in self.graphics.iter() {
             canvas.draw(mesh, DrawParam::default());
         }
+        Ok(())
+    }
+    pub fn draw_player_position(&mut self, canvas: &mut graphics::Canvas,player:&Player)-> GameResult {
+        let (x, y) = self.get_coordinates_for_pos(&player.pos);
+        let rot = player.get_rotation();
+        let (x_comp, y_comp)=player.get_rotation_compensaion();
+        let scale = 0.6;
+        let size = self.player_arrow.height();
+        let x = x + size as f32*scale  * x_comp;
+        let y = y + size as f32*scale  * y_comp;
+
+        canvas.draw(&self.player_arrow, DrawParam::default()
+        .dest([x , y])
+        .scale([scale,scale])
+        .rotation(rot));
         Ok(())
     }
 }
