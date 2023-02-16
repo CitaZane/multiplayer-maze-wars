@@ -109,9 +109,8 @@ impl CreateGameStruct {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
-                    let output = Command::new("./start_server.sh").output();
-                    println!("{:?}", output);
-                    //_ = self.connect();
+                    let output = thread::spawn(|| CreateGameStruct::server());
+                    _ = self.connect();
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
@@ -141,23 +140,23 @@ impl CreateGameStruct {
         Ok(socket)
     }
 
-    // pub fn server(&self) -> std::io::Result<()> {
-    //     let my_local_ip = local_ip().unwrap();
-    //     let socket = UdpSocket::bind(my_local_ip.to_string() + ":34254")?; // for UDP4/6
+    pub fn server() -> std::io::Result<()> {
+        let my_local_ip = local_ip().unwrap();
+        let socket = UdpSocket::bind(my_local_ip.to_string() + ":34254")?; // for UDP4/6
 
-    //     let mut buf = [0; 2048];
-    //     println!("Server started at: {}", my_local_ip.to_string() + ":34254");
-    //     loop {
-    //         // Receives a single datagram message on the socket.
-    //         // If `buf` is too small to hold
-    //         // the message, it will be cut off.
-    //         let (amt, src) = socket.recv_from(&mut buf)?;
-    //         let echo = std::str::from_utf8(&buf[..amt]).unwrap();
-    //         println!("Message: {}", echo);
-    //         // Redeclare `buf` as slice of the received data
-    //         // and send data back to origin.
-    //         let buf = &mut buf[..amt];
-    //         socket.send_to(buf, &src)?;
-    //     }
-    // }
+        let mut buf = [0; 2048];
+        println!("Server started at: {}", my_local_ip.to_string() + ":34254");
+        loop {
+            // Receives a single datagram message on the socket.
+            // If `buf` is too small to hold
+            // the message, it will be cut off.
+            let (amt, src) = socket.recv_from(&mut buf)?;
+            let echo = std::str::from_utf8(&buf[..amt]).unwrap();
+            println!("Message: {}", echo);
+            // Redeclare `buf` as slice of the received data
+            // and send data back to origin.
+            let buf = &mut buf[..amt];
+            socket.send_to(buf, &src)?;
+        }
+    }
 }
