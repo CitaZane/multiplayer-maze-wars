@@ -10,7 +10,7 @@ pub struct Player {
     pub camera_plane:Vec2,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Direction{
     Up,
     Down,

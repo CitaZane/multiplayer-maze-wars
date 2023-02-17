@@ -1,8 +1,11 @@
 pub use crate::map::Map;
+use crate::player::Direction;
 pub use crate::player::Player;
 use crate::SCREEN_WIDTH;
 use ggez::glam::Vec2;
-use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, PxScale, Text, TextFragment};
+use ggez::graphics::{
+    self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
+};
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
@@ -14,6 +17,11 @@ pub struct GameStruct {
     pub map: Map,
     pub player: Player,
     pub opponents: Vec<Player>,
+
+    players_last_pos: Vec2,
+    players_last_dir: Direction,
+    scene: MeshBuilder,
+    buffer: Vec<f32>,
 }
 // 17 x 33
 impl GameStruct {
@@ -24,14 +32,82 @@ impl GameStruct {
             map: Map::new(ctx),
             player: Player::new(),
             opponents: vec![opponent],
+            players_last_pos: Vec2 { x: 0.0, y: 0.0 },
+            players_last_dir: Direction::Up,
+            scene: MeshBuilder::new(),
+            buffer: vec![],
         })
     }
+
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        let maze = &self.map.maze;
+        if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
+            self.trace_scene()?;
+        }
+        self.draw_opponents(canvas, ctx)?;
+        self.map.draw(canvas,&self.player)?;
+        self.draw_fps_counter(canvas, ctx)?;
+        //draw 3D scene
+        let mesh = Mesh::from_data(ctx, self.scene.build());
+        canvas.draw(&mesh, DrawParam::default());
+        //update last position stats
+        self.players_last_pos = self.player.pos;
+        self.players_last_dir = self.player.dir.clone();
+        Ok(())
+    }
+    fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+        let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
+        let y_offset = 20.0;
+        let player_dir = self.player.dir.vec();
+        for i in 0..self.opponents.len() {
+            //translate sprite position to relative to camera
+            let sprite_pos = self.opponents[i].pos - self.player.pos;
+            //transform sprite with the inverse camera matrix
+            let inv_det = 1.0
+                / (self.player.camera_plane.x * player_dir.y
+                    - player_dir.x * self.player.camera_plane.y);
+
+            let transform_x = inv_det * (player_dir.y * sprite_pos.x - player_dir.x * sprite_pos.y);
+            let transform_y = inv_det
+                * (-self.player.camera_plane.y * sprite_pos.x
+                    + self.player.camera_plane.x * sprite_pos.y); //depth
+            let sprite_screen_x = (VIEWPORT_WIDTH as f32 / 2.0) * (1. + transform_x / transform_y);
+
+            // calc the height of the sprite plane
+            let h = 165.0;
+            let sprite_height = (VIEWPORT_HEIGHT as f32 / transform_y).abs() as f32;
+            let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
+            let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT / 2.0;
+
+            let sprite_x_start = -sprite_height / 2.0 + sprite_screen_x as f32;
+            let sprite_x_end = sprite_height / 2.0 + sprite_screen_x as f32;
+
+            let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
+            let x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
+            let y = sprite_y_end as f32 + y_offset - scaled_size;
+            if transform_y >= 0.0
+                && sprite_x_start > 0.0
+                && sprite_x_end < VIEWPORT_WIDTH + x_offset
+                && self.buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
+            {
+                let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
+                let scale = scaled_size / player_img.height() as f32 * 1.2;
+                canvas.draw(
+                    &player_img,
+                    DrawParam::default()
+                        .dest([x - scaled_size * 0.15, y])
+                        .scale([scale, scale]),
+                );
+            }
+        }
+        Ok(())
+    }
+    fn trace_scene(&mut self) -> GameResult {
+        self.scene = MeshBuilder::new();
+        let maze = &self.map.maze.clone();
         let mut last_side = 0;
         let mut last_height: f32 = 0.;
-        let mut buffer: Vec<f32> = vec![]; //used for drawing opponents
-                                           // calculate rays for ech pixel in horizontal direction
+        self.buffer = vec![]; //used for drawing opponents
+                              // calculate rays for ech pixel in horizontal direction
         for i in 0..VIEWPORT_WIDTH as i32 {
             let camera_x = (2 * i) as f32 / VIEWPORT_WIDTH as f32 - 1.0;
             let ray_dir_x = self.player.dir.vec().x + self.player.camera_plane.x * camera_x;
@@ -120,70 +196,14 @@ impl GameStruct {
                 }
             }
             // draw the walls
-            self.draw_walls(canvas, ctx, line_height, i)?;
+            self.draw_walls(line_height, i)?;
             if edge {
-                self.draw_edge(canvas, ctx, line_height, last_height, i)?;
+                self.draw_edge(line_height, last_height, i)?;
             }
-
-            buffer.push(GameStruct::calc_bottom_point(line_height));
+            self.draw_frame()?;
+            self.buffer.push(GameStruct::calc_bottom_point(line_height));
             last_height = line_height;
             last_side = side;
-        }
-        self.draw_opponents(canvas, ctx, buffer)?;
-        self.map.draw(canvas, ctx)?;
-        self.map.draw_player_position(canvas, &self.player)?;
-        self.draw_fps_counter(canvas, ctx)?;
-        Ok(())
-    }
-    fn draw_opponents(
-        &mut self,
-        canvas: &mut graphics::Canvas,
-        ctx: &mut Context,
-        buffer: Vec<f32>,
-    ) -> GameResult {
-        let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
-        let y_offset = 20.0;
-        let player_dir = self.player.dir.vec();
-        for i in 0..self.opponents.len() {
-            //translate sprite position to relative to camera
-            let sprite_pos = self.opponents[i].pos - self.player.pos;
-            //transform sprite with the inverse camera matrix
-            let inv_det = 1.0
-                / (self.player.camera_plane.x * player_dir.y
-                    - player_dir.x * self.player.camera_plane.y);
-
-            let transform_x = inv_det * (player_dir.y * sprite_pos.x - player_dir.x * sprite_pos.y);
-            let transform_y = inv_det
-                * (-self.player.camera_plane.y * sprite_pos.x
-                    + self.player.camera_plane.x * sprite_pos.y); //depth
-            let sprite_screen_x = (VIEWPORT_WIDTH as f32 / 2.0) * (1. + transform_x / transform_y);
-
-            // calc the height of the sprite plane
-            let h = 165.0;
-            let sprite_height = (VIEWPORT_HEIGHT as f32 / transform_y).abs() as f32;
-            let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
-            let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT / 2.0;
-
-            let sprite_x_start = -sprite_height / 2.0 + sprite_screen_x as f32;
-            let sprite_x_end = sprite_height / 2.0 + sprite_screen_x as f32;
-
-            let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
-            let x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
-            let y = sprite_y_end as f32 + y_offset - scaled_size;
-            if transform_y >= 0.0
-                && sprite_x_start > 0.0
-                && sprite_x_end < VIEWPORT_WIDTH + x_offset
-                && buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
-            {
-                let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
-                let scale = scaled_size / player_img.height() as f32 * 1.2;
-                canvas.draw(
-                    &player_img,
-                    DrawParam::default()
-                        .dest([x - scaled_size * 0.15, y])
-                        .scale([scale, scale]),
-                );
-            }
         }
         Ok(())
     }
@@ -201,31 +221,24 @@ impl GameStruct {
         }
         draw_end
     }
-    fn draw_walls(
-        &self,
-        canvas: &mut graphics::Canvas,
-        ctx: &mut Context,
-        wall_height: f32,
-        line: i32,
-    ) -> GameResult {
+    fn draw_frame(&mut self) -> GameResult {
+        let frame = graphics::Rect::new(X, Y, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+        self.scene
+            .rectangle(DrawMode::stroke(1.0), frame, Color::BLACK)?;
+        Ok(())
+    }
+    fn draw_walls(&mut self, wall_height: f32, line: i32) -> GameResult {
         //calculate lowest and highest pixel to fill in current stripe
         let start_point = GameStruct::calc_up_point(wall_height);
         let end_point = GameStruct::calc_bottom_point(wall_height);
         let x = line as f32 + (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
 
-        self.draw_point(canvas, ctx, x, end_point + y_offset)?;
-        self.draw_point(canvas, ctx, x, start_point + y_offset)?;
+        self.draw_point(x, end_point + y_offset)?;
+        self.draw_point(x, start_point + y_offset)?;
         Ok(())
     }
-    fn draw_edge(
-        &self,
-        canvas: &mut graphics::Canvas,
-        ctx: &mut Context,
-        wall_height: f32,
-        previous_height: f32,
-        line: i32,
-    ) -> GameResult {
+    fn draw_edge(&mut self, wall_height: f32, previous_height: f32, line: i32) -> GameResult {
         let y_offset = 20.0;
 
         if previous_height < wall_height {
@@ -236,7 +249,7 @@ impl GameStruct {
                 Vec2::new(x, start_point + y_offset),
                 Vec2::new(x, end_point + y_offset),
             ];
-            self.draw_line(canvas, ctx, points)?;
+            self.draw_line(points)?;
         } else {
             let x = line as f32 - 1. + (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
             let end_point = GameStruct::calc_bottom_point(previous_height);
@@ -245,31 +258,19 @@ impl GameStruct {
                 Vec2::new(x, start_point + y_offset),
                 Vec2::new(x, end_point + y_offset),
             ];
-            self.draw_line(canvas, ctx, points)?;
+            self.draw_line(points)?;
         }
 
         Ok(())
     }
-    fn draw_point(
-        &self,
-        canvas: &mut graphics::Canvas,
-        ctx: &mut Context,
-        x: f32,
-        y: f32,
-    ) -> GameResult {
+    fn draw_point(&mut self, x: f32, y: f32) -> GameResult {
         let point = graphics::Rect::new(x, y, 1.0, 1.0);
-        let mesh = Mesh::new_rectangle(ctx, graphics::DrawMode::fill(), point, Color::BLACK)?;
-        canvas.draw(&mesh, DrawParam::default());
+        self.scene
+            .rectangle(DrawMode::fill(), point, Color::BLACK)?;
         Ok(())
     }
-    fn draw_line(
-        &self,
-        canvas: &mut graphics::Canvas,
-        ctx: &mut Context,
-        points: &[Vec2],
-    ) -> GameResult {
-        let mesh = Mesh::new_polyline(ctx, DrawMode::stroke(1.), points, Color::BLACK)?;
-        canvas.draw(&mesh, DrawParam::default());
+    fn draw_line(&mut self, points: &[Vec2]) -> GameResult {
+        self.scene.line(points, 1.0, Color::BLACK)?;
         Ok(())
     }
     fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
