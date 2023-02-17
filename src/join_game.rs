@@ -12,8 +12,7 @@ use ggez::{
 use crate::{
     drawer::{Button, Drawer, Input},
     server::Server,
-    views::create_game::CreateGameStruct,
-    View,
+    view::View,
 };
 
 use super::{game::GameStruct, main_menu::MainMenuStruct};

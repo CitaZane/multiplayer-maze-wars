@@ -1,5 +1,5 @@
 use ggez::{
-    graphics::{self, Color, DrawParam, Mesh, Text},
+    graphics::{self, Text},
     Context, GameResult,
 };
 
@@ -7,7 +7,7 @@ use crate::{
     create_game::CreateGameStruct, game::GameStruct, join_game::JoinGameStruct,
     main_menu::MainMenuStruct,
 };
-use crate::{SCREEN_WIDTH, VIEWPORT_HEIGHT, VIEWPORT_WIDTH};
+use crate::{SCREEN_WIDTH, VIEWPORT_WIDTH};
 const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
 pub enum View {
@@ -19,7 +19,7 @@ pub enum View {
 impl View {
     pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         match self {
-            View::Game(view) => view.draw(canvas, ctx)?,
+            View::Game(mut view) => view.draw(canvas, ctx)?,
             View::MainMenu(view) => view.draw(canvas, ctx)?,
             View::JoinGame(view) => view.draw(canvas, ctx)?,
             View::CreateGame(view) => view.draw(canvas, ctx)?,

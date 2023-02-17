@@ -1,16 +1,13 @@
 use local_ip_address::local_ip;
+use std::collections::HashMap;
 use std::thread;
-use std::{collections::HashMap, net::UdpSocket};
 
+use crate::drawer::{Button, Drawer, Input};
+use crate::server::Server;
+use crate::view::View;
 use ggez::{
     graphics::{self, Rect, Text},
     Context, GameResult,
-};
-use crate::view::View;
-use crate::server::Server;
-use crate::{
-    drawer::{Button, Drawer, Input},
-    View,
 };
 
 use super::{game::GameStruct, main_menu::MainMenuStruct};
@@ -101,10 +98,7 @@ impl CreateGameStruct {
         let mut new_view = None;
 
         for (name, elem_rect) in &self.element_rects {
-            if mouse_x > elem_rect.x
-                && mouse_x < elem_rect.x + elem_rect.w
-                && mouse_y > elem_rect.y
-                && mouse_y < elem_rect.y + elem_rect.h
+            if mouse_x > elem_rect.x && mouse_x < elem_rect.x + elem_rect.w && mouse_y > elem_rect.y
             {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;

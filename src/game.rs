@@ -1,13 +1,8 @@
 pub use crate::map::Map;
 pub use crate::player::Player;
-use ggez::glam::Vec2;
-// pub use crate::view::View;
-use crate::view::View2;
-use crate::View;
 use crate::SCREEN_WIDTH;
-use ggez::event::EventHandler;
+use ggez::glam::Vec2;
 use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, PxScale, Text, TextFragment};
-use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
@@ -16,20 +11,20 @@ const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
 
 pub struct GameStruct {
-    map: Map,
-    player: Player,
-    opponents: Vec<Player>,
+    pub map: Map,
+    pub player: Player,
+    pub opponents: Vec<Player>,
 }
 // 17 x 33
 impl GameStruct {
-    pub fn new(ctx: &mut Context) -> Self {
+    pub fn new(ctx: &mut Context) -> GameResult<Self> {
         // Load/create resources such as images here.
         let opponent = Player::new();
-        Self {
+        Ok(Self {
             map: Map::new(ctx),
             player: Player::new(),
             opponents: vec![opponent],
-        }
+        })
     }
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         let maze = &self.map.maze;
@@ -130,7 +125,7 @@ impl GameStruct {
                 self.draw_edge(canvas, ctx, line_height, last_height, i)?;
             }
 
-            buffer.push(Game::calc_bottom_point(line_height));
+            buffer.push(GameStruct::calc_bottom_point(line_height));
             last_height = line_height;
             last_side = side;
         }
@@ -211,8 +206,8 @@ impl GameStruct {
         line: i32,
     ) -> GameResult {
         //calculate lowest and highest pixel to fill in current stripe
-        let start_point = Game::calc_up_point(wall_height);
-        let end_point = Game::calc_bottom_point(wall_height);
+        let start_point = GameStruct::calc_up_point(wall_height);
+        let end_point = GameStruct::calc_bottom_point(wall_height);
         let x = line as f32 + (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
 
@@ -232,8 +227,8 @@ impl GameStruct {
 
         if previous_height < wall_height {
             let x = line as f32 + (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
-            let end_point = Game::calc_bottom_point(wall_height);
-            let start_point = Game::calc_up_point(wall_height);
+            let end_point = GameStruct::calc_bottom_point(wall_height);
+            let start_point = GameStruct::calc_up_point(wall_height);
             let points = &[
                 Vec2::new(x, start_point + y_offset),
                 Vec2::new(x, end_point + y_offset),
@@ -241,8 +236,8 @@ impl GameStruct {
             self.draw_line(canvas, ctx, points)?;
         } else {
             let x = line as f32 - 1. + (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
-            let end_point = Game::calc_bottom_point(previous_height);
-            let start_point = Game::calc_up_point(previous_height);
+            let end_point = GameStruct::calc_bottom_point(previous_height);
+            let start_point = GameStruct::calc_up_point(previous_height);
             let points = &[
                 Vec2::new(x, start_point + y_offset),
                 Vec2::new(x, end_point + y_offset),
@@ -291,130 +286,6 @@ impl GameStruct {
             ..Default::default()
         });
         canvas.draw(&text, DrawParam::default());
-        Ok(())
-    }
-}
-impl EventHandler for Game {
-    fn update(&mut self, ctx: &mut Context) -> GameResult {
-        if ctx.keyboard.is_key_pressed(KeyCode::Up) {
-            self.player.go_forward(&self.map.maze);
-        }
-        if ctx.keyboard.is_key_pressed(KeyCode::Down) {
-            self.player.go_backward(&self.map.maze);
-        }
-        if ctx.keyboard.is_key_pressed(KeyCode::Left) {
-            self.player.turn_left();
-        }
-        if ctx.keyboard.is_key_pressed(KeyCode::Right) {
-            self.player.turn_right();
-        }
-        Ok(())
-    }
-    fn draw(&mut self, ctx: &mut Context) -> GameResult {
-        let mut canvas = graphics::Canvas::from_frame(ctx, Color::WHITE);
-        // Draw code here...
-        self.map.draw(&mut canvas, ctx)?;
-        self.view.draw(&mut canvas, ctx)?;
-        self.draw_scene(&mut canvas, ctx)?;
-        self.map.draw_player_position(&mut canvas, &self.player)?;
-        self.draw_fps_counter(&mut canvas, ctx)?;
-        canvas.finish(ctx)
-    }
-    fn mouse_button_down_event(
-        &mut self,
-        ctx: &mut Context,
-        button: MouseButton,
-        x: f32,
-        y: f32,
-    ) -> Result<(), GameError> {
-        if let MouseButton::Left = button {
-            let mut new_view = None;
-            match &mut self.view {
-                View::MainMenu(view_data) => {
-                    new_view = view_data.check_mouse_click(x, y, ctx);
-                }
-                View::JoinGame(view_data) => {
-                    view_data.ip_input_active = false;
-                    view_data.name_input_active = false;
-                    new_view = view_data.check_mouse_click(x, y, ctx);
-                }
-                View::CreateGame(view_data) => {
-                    view_data.name_input_active = false;
-                    new_view = view_data.check_mouse_click(x, y, ctx);
-                }
-                View::Game(_) => {}
-            };
-            if let Some(view) = new_view {
-                self.view = view;
-            }
-        }
-
-        Ok(())
-    }
-
-    fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
-        match &mut self.view {
-            View::Game(_) => {}
-            View::MainMenu(_) => {}
-            View::JoinGame(view_data) => {
-                if view_data.ip_input_active
-                    && character.is_alphanumeric()
-                    && view_data.ip_address.contents().len() <= 20
-                    || character == '.'
-                    || character == ':'
-                {
-                    view_data.ip_address.add(character);
-                }
-                if view_data.name_input_active
-                    && character.is_alphanumeric()
-                    && view_data.name.contents().len() <= 10
-                {
-                    view_data.name.add(character);
-                }
-            }
-            View::CreateGame(view_data) => {
-                if view_data.name_input_active
-                    && character.is_alphanumeric()
-                    && view_data.name.contents().len() <= 10
-                {
-                    view_data.name.add(character);
-                }
-            }
-        }
-
-        Ok(())
-    }
-
-    fn key_down_event(
-        &mut self,
-        _ctx: &mut Context,
-        input: ggez::input::keyboard::KeyInput,
-        _repeated: bool,
-    ) -> Result<(), GameError> {
-        if let Some(keycode) = input.keycode {
-            if let keyboard::KeyCode::Back = keycode {
-                match &mut self.view {
-                    View::Game(_) => {}
-                    View::MainMenu(_) => {}
-                    View::JoinGame(view_data) => {
-                        if view_data.ip_input_active {
-                            view_data.ip_address =
-                                remove_input_text_last_letter(view_data.ip_address.contents());
-                        }
-                        if view_data.name_input_active {
-                            view_data.name =
-                                remove_input_text_last_letter(view_data.name.contents());
-                        }
-                    }
-                    View::CreateGame(view_data) => {
-                        if view_data.name_input_active {
-                            view_data.name =
-                                remove_input_text_last_letter(view_data.name.contents());
-                        }
-                    }
-                }
-            }
-        }
         Ok(())
     }
 }

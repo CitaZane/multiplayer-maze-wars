@@ -1,6 +1,7 @@
 use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::{ContextBuilder, GameResult};
+use state::State;
 pub mod create_game;
 pub mod drawer;
 pub mod game;
@@ -9,14 +10,13 @@ mod main_menu;
 pub mod map;
 pub mod player;
 pub mod server;
+pub mod state;
 pub mod view;
 // pub mod view;
 const SCREEN_WIDTH: f32 = 600.0;
 const SCREEN_HEIGHT: f32 = 800.0;
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
-
-use std::net::{SocketAddr, UdpSocket};
 
 fn main() -> GameResult {
     let c = Conf::new();
@@ -29,6 +29,7 @@ fn main() -> GameResult {
         .add_resource_path("resources")
         .build()?;
 
-    let game = Game::new(&mut ctx)?;
-    event::run(ctx, event_loop, game);
+    let state = State::new(&mut ctx)?;
+    // let game = GameStruct::new(&mut ctx)?;
+    event::run(ctx, event_loop, state);
 }

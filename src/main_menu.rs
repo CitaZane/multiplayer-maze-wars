@@ -4,11 +4,10 @@ use ggez::{
     graphics::{self, Rect},
     Context, GameResult,
 };
-use crate::view::View2;
 
 use crate::{
     drawer::{Button, Drawer},
-    
+    view::View,
 };
 
 use super::{create_game::CreateGameStruct, join_game::JoinGameStruct};
