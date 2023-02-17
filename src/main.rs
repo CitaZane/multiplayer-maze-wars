@@ -6,17 +6,16 @@ pub mod create_game;
 pub mod drawer;
 pub mod game;
 pub mod join_game;
-mod main_menu;
+pub mod main_menu;
 pub mod map;
 pub mod player;
 pub mod server;
 pub mod state;
 pub mod view;
-// pub mod view;
 const SCREEN_WIDTH: f32 = 600.0;
 const SCREEN_HEIGHT: f32 = 800.0;
-pub const VIEWPORT_WIDTH: f32 = 370.0;
-pub const VIEWPORT_HEIGHT: f32 = 410.0;
+// const VIEWPORT_WIDTH: f32 = 370.0;
+const VIEWPORT_HEIGHT: f32 = 410.0;
 
 fn main() -> GameResult {
     let c = Conf::new();
@@ -28,8 +27,6 @@ fn main() -> GameResult {
         .window_mode(window_mode)
         .add_resource_path("resources")
         .build()?;
-
     let state = State::new(&mut ctx)?;
-    // let game = GameStruct::new(&mut ctx)?;
     event::run(ctx, event_loop, state);
 }

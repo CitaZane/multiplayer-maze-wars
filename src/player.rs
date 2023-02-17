@@ -1,7 +1,8 @@
 use core::time;
-use std::thread;
+use std::{thread, time::Duration};
 
 use ggez::glam::Vec2;
+use throttle::Throttle;
 
 #[derive(Debug)]
 pub struct Player {
@@ -31,6 +32,7 @@ impl Direction{
 
 
 impl Player {
+    
     pub fn new() -> Self {
         Self {
             pos: Vec2::new(1., 1.),
@@ -51,7 +53,8 @@ impl Player {
         self.go(maze, direction);
     }
     pub fn go(&mut self, maze:&Vec<Vec<i32>>, direction:Direction){
-        thread::sleep(time::Duration::from_millis(100));
+        // thread::sleep(time::Duration::from_millis(100));
+        
         match direction {
             Direction::Right => {
                 if self.pos.x >= (maze[0].len() - 1) as f32{

@@ -1,14 +1,17 @@
-pub use crate::map::Map;
+use crate::map::Map;
 use crate::player::Direction;
-pub use crate::player::Player;
+use crate::player::Player;
 use crate::SCREEN_WIDTH;
 use ggez::glam::Vec2;
+use ggez::{Context, GameResult};
 use ggez::graphics::{
     self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
 };
-use ggez::{Context, GameResult};
-pub const VIEWPORT_WIDTH: f32 = 370.0;
-pub const VIEWPORT_HEIGHT: f32 = 410.0;
+use std::time::Duration;
+use throttle::Throttle;
+
+const VIEWPORT_WIDTH: f32 = 370.0;
+const VIEWPORT_HEIGHT: f32 = 410.0;
 
 const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
@@ -275,7 +278,6 @@ impl GameStruct {
     }
     fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         let counter = ctx.time.fps();
-        // let text = Text::new(counter.to_string());
         let text = Text::new(TextFragment {
             // `TextFragment` stores a string, and optional parameters which will override those
             // of `Text` itself. This allows inlining differently formatted lines, words,

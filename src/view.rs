@@ -7,9 +7,9 @@ use crate::{
     create_game::CreateGameStruct, game::GameStruct, join_game::JoinGameStruct,
     main_menu::MainMenuStruct,
 };
-use crate::{SCREEN_WIDTH, VIEWPORT_WIDTH};
-const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
-const Y: f32 = 20.0;
+// use crate::{SCREEN_WIDTH, VIEWPORT_WIDTH};
+// const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
+// const Y: f32 = 20.0;
 pub enum View {
     Game(GameStruct),
     MainMenu(MainMenuStruct),
