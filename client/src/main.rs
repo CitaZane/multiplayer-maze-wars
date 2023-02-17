@@ -1,40 +1,34 @@
-
 use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::{ContextBuilder, GameResult};
-// pub use starting_screen;
-use starting_screen::Game;
-// 
-pub mod starting_screen;
-mod main_menu;
-pub mod drawer;
+use std::net::{SocketAddr, UdpSocket};
+mod game;
+pub use game::*;
 pub mod map;
-pub mod server;
-pub mod player;
 pub mod view;
-pub mod create_game;
-pub mod game;
-pub mod join_game;
-// pub mod view;
+pub mod player;
 const SCREEN_WIDTH: f32 = 600.0;
 const SCREEN_HEIGHT: f32 = 800.0;
-pub const VIEWPORT_WIDTH: f32 = 370.0;
-pub const VIEWPORT_HEIGHT: f32 = 410.0;
 
-use std::net::{SocketAddr, UdpSocket};
+fn main() -> GameResult {
+    // initialize socket connection for client
+    let socket = connect();
 
-fn main() -> GameResult {    
+    // Make a Context.
     let c = Conf::new();
     let window_mode = WindowMode::default().dimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
-    let window_setup = WindowSetup::default().title("Maze Wars").icon("/eye.png");
+    let window_setup = WindowSetup::default().title("Maze Wars");
     let (mut ctx, event_loop) = ContextBuilder::new("maze_wars", "The Gang")
         .default_conf(c)
         .window_setup(window_setup)
         .window_mode(window_mode)
-        .add_resource_path("resources")
+        .add_resource_path("assets")
         .build()?;
-
-    let game = Game::new(&mut ctx)?;
+    // Create an instance of your event handler.
+    // Usually, you should provide it with the Context object to
+    // use when setting your game up.
+    let game = Game::new(&mut ctx);
+    // Run!
     event::run(ctx, event_loop, game);
 }
 
@@ -86,4 +80,3 @@ fn connect() -> Result<UdpSocket, std::io::Error> {
     // }
     // Ok(())
 }
-

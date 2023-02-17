@@ -1,49 +1,17 @@
 use ggez::glam::Vec2;
 pub use crate::map::Map;
 pub use crate::player::Player;
-// pub use crate::view::View;
-use crate::View;
+pub use crate::view::View;
 use crate::SCREEN_WIDTH;
-use crate::view::View2;
 use ggez::event::EventHandler;
 use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, Text, PxScale, TextFragment};
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
-
-use crate::{drawer::Drawer/* , Map*/};
-const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
-const Y: f32 = 20.0;
-pub struct GameStruct {
-    pub drawer: Drawer,
-    pub map: Map,
-}
-impl GameStruct {
-    pub fn new(ctx: &mut Context) -> GameResult<GameStruct> {
-        let drawer = Drawer::new(ctx)?;
-        Ok(GameStruct {
-            map: Map::new(ctx),
-            drawer,
-        })
-    }
-    pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        self.map.draw(canvas, ctx)?;
-        let frame = graphics::Rect::new(X, Y, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        let mesh = Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::stroke(1.0),
-            frame,
-            Color::from_rgb(0, 0, 0),
-        )?;
-        canvas.draw(&mesh, DrawParam::default());
-        Ok(())
-    }
-}
-
 pub struct Game {
     map: Map,
-    view: View2,
+    view: View,
     player: Player,
     opponents:Vec<Player>,
 }
@@ -54,7 +22,7 @@ impl Game {
         let opponent = Player::new();
         Self {
             map: Map::new(ctx),
-            view: View2::new(),
+            view: View::new(),
             player: Player::new(),
             opponents:vec![opponent],
         }
@@ -150,7 +118,6 @@ impl Game {
                     edge = true
                 }
             }
-            // draw the walls
             self.draw_walls(canvas, ctx, line_height, i)?;
             if edge {
                 self.draw_edge(canvas, ctx, line_height, last_height, i)?;
