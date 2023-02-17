@@ -18,7 +18,7 @@ impl Map {
     pub fn new(ctx: &mut Context) -> Self {
         let maze = Map::level_one();
         let graphics = Map::register_graphics(&maze, ctx);
-        let player_arrow = Image::from_path(ctx, "/back-arrow.png").expect("Arrow image missing");
+        let player_arrow = Image::from_path(ctx, "/arrow.png").expect("Arrow image missing");
         Map { maze, graphics , player_arrow}
     }
     fn level_one() -> Vec<Vec<i32>> {
