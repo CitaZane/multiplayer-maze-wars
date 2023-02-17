@@ -17,9 +17,9 @@ pub enum View {
     CreateGame(CreateGameStruct),
 }
 impl View {
-    pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+    pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         match self {
-            View::Game(mut view) => view.draw(canvas, ctx)?,
+            View::Game(view) => view.draw(canvas, ctx)?,
             View::MainMenu(view) => view.draw(canvas, ctx)?,
             View::JoinGame(view) => view.draw(canvas, ctx)?,
             View::CreateGame(view) => view.draw(canvas, ctx)?,

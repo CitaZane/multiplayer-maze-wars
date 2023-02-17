@@ -22,7 +22,7 @@ impl State {
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        if let View::Game(mut game_data) = &self.view {
+        if let View::Game(game_data) = &mut self.view {
             if ctx.keyboard.is_key_pressed(KeyCode::Up) {
                 game_data.player.go_forward(&game_data.map.maze);
             }
