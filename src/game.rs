@@ -130,6 +130,7 @@ impl GameStruct {
             last_side = side;
         }
         self.draw_opponents(canvas, ctx, buffer)?;
+        self.map.draw(canvas, ctx)?;
         Ok(())
     }
     fn draw_opponents(
