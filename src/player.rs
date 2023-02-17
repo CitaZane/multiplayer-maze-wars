@@ -1,3 +1,6 @@
+use core::time;
+use std::thread;
+
 use ggez::glam::Vec2;
 
 #[derive(Debug)]
@@ -48,6 +51,7 @@ impl Player {
         self.go(maze, direction);
     }
     pub fn go(&mut self, maze:&Vec<Vec<i32>>, direction:Direction){
+        thread::sleep(time::Duration::from_millis(100));
         match direction {
             Direction::Right => {
                 if self.pos.x >= (maze[0].len() - 1) as f32{
@@ -91,6 +95,7 @@ impl Player {
             Direction::Up => Direction::Right,
         };
         self.configure_camera_plane();
+        thread::sleep(time::Duration::from_millis(100));
     }
     pub fn turn_left(&mut self){
         self.dir = match self.dir {
@@ -100,6 +105,7 @@ impl Player {
             Direction::Up => Direction::Left,
         };
         self.configure_camera_plane();
+        thread::sleep(time::Duration::from_millis(100));
     }
     fn configure_camera_plane(&mut self){
         self.camera_plane = match self.dir {
