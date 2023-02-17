@@ -1,70 +1,42 @@
-use ggez::glam::Vec2;
 pub use crate::map::Map;
 pub use crate::player::Player;
+use ggez::glam::Vec2;
 // pub use crate::view::View;
+use crate::view::View2;
 use crate::View;
 use crate::SCREEN_WIDTH;
-use crate::view::View2;
 use ggez::event::EventHandler;
-use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, Text, PxScale, TextFragment};
+use ggez::graphics::{self, Color, DrawMode, DrawParam, Mesh, PxScale, Text, TextFragment};
 use ggez::input::keyboard::KeyCode;
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
 pub const VIEWPORT_HEIGHT: f32 = 410.0;
 
-use crate::{drawer::Drawer/* , Map*/};
 const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
-pub struct GameStruct {
-    pub drawer: Drawer,
-    pub map: Map,
-}
-impl GameStruct {
-    pub fn new(ctx: &mut Context) -> GameResult<GameStruct> {
-        let drawer = Drawer::new(ctx)?;
-        Ok(GameStruct {
-            map: Map::new(ctx),
-            drawer,
-        })
-    }
-    pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        self.map.draw(canvas, ctx)?;
-        let frame = graphics::Rect::new(X, Y, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        let mesh = Mesh::new_rectangle(
-            ctx,
-            graphics::DrawMode::stroke(1.0),
-            frame,
-            Color::from_rgb(0, 0, 0),
-        )?;
-        canvas.draw(&mesh, DrawParam::default());
-        Ok(())
-    }
-}
 
-pub struct Game {
+pub struct GameStruct {
     map: Map,
-    view: View2,
     player: Player,
-    opponents:Vec<Player>,
+    opponents: Vec<Player>,
 }
 // 17 x 33
-impl Game {
+impl GameStruct {
     pub fn new(ctx: &mut Context) -> Self {
         // Load/create resources such as images here.
         let opponent = Player::new();
         Self {
             map: Map::new(ctx),
-            view: View2::new(),
             player: Player::new(),
-            opponents:vec![opponent],
+            opponents: vec![opponent],
         }
     }
-    fn draw_scene(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+    pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         let maze = &self.map.maze;
         let mut last_side = 0;
         let mut last_height: f32 = 0.;
-        let mut buffer:Vec<f32> = vec![]; //used for drawing opponents
-        // calculate rays for ech pixel in horizontal direction
+        let mut buffer: Vec<f32> = vec![]; //used for drawing opponents
+                                           // calculate rays for ech pixel in horizontal direction
         for i in 0..VIEWPORT_WIDTH as i32 {
             let camera_x = (2 * i) as f32 / VIEWPORT_WIDTH as f32 - 1.0;
             let ray_dir_x = self.player.dir.vec().x + self.player.camera_plane.x * camera_x;
@@ -140,12 +112,14 @@ impl Game {
             //Calculate height of line to draw on screen
             let line_height = VIEWPORT_HEIGHT / prep_wall_dist as f32;
             let mut side_type = 1;
-            if self.player.dir.vec().x == 0.{side_type =0}
-            if !edge && side != side_type{
+            if self.player.dir.vec().x == 0. {
+                side_type = 0
+            }
+            if !edge && side != side_type {
                 if line_height.round() != last_height.round() {
                     edge = true
                 }
-            }else if !edge && side == side_type{
+            } else if !edge && side == side_type {
                 if (line_height.round() - last_height.round()).abs() > 5.0 {
                     edge = true
                 }
@@ -160,43 +134,59 @@ impl Game {
             last_height = line_height;
             last_side = side;
         }
-        self.draw_opponents(canvas,ctx, buffer)?;
+        self.draw_opponents(canvas, ctx, buffer)?;
         Ok(())
     }
-    fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context, buffer:Vec<f32>) -> GameResult{
+    fn draw_opponents(
+        &mut self,
+        canvas: &mut graphics::Canvas,
+        ctx: &mut Context,
+        buffer: Vec<f32>,
+    ) -> GameResult {
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
         let player_dir = self.player.dir.vec();
-        for i in 0..self.opponents.len(){
-             //translate sprite position to relative to camera
+        for i in 0..self.opponents.len() {
+            //translate sprite position to relative to camera
             let sprite_pos = self.opponents[i].pos - self.player.pos;
             //transform sprite with the inverse camera matrix
-            let inv_det = 1.0 / (self.player.camera_plane.x * player_dir.y - player_dir.x * self.player.camera_plane.y);
+            let inv_det = 1.0
+                / (self.player.camera_plane.x * player_dir.y
+                    - player_dir.x * self.player.camera_plane.y);
 
             let transform_x = inv_det * (player_dir.y * sprite_pos.x - player_dir.x * sprite_pos.y);
-            let transform_y = inv_det * (-self.player.camera_plane.y * sprite_pos.x + self.player.camera_plane.x * sprite_pos.y); //depth
-            let sprite_screen_x = (VIEWPORT_WIDTH as f32/ 2.0) * (1.+ transform_x/transform_y);
+            let transform_y = inv_det
+                * (-self.player.camera_plane.y * sprite_pos.x
+                    + self.player.camera_plane.x * sprite_pos.y); //depth
+            let sprite_screen_x = (VIEWPORT_WIDTH as f32 / 2.0) * (1. + transform_x / transform_y);
 
             // calc the height of the sprite plane
             let h = 165.0;
-            let sprite_height = (VIEWPORT_HEIGHT as f32 /transform_y).abs() as f32;
+            let sprite_height = (VIEWPORT_HEIGHT as f32 / transform_y).abs() as f32;
             let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
-            let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT /2.0;
+            let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT / 2.0;
 
-            let sprite_x_start =  -sprite_height / 2.0 + sprite_screen_x  as f32;
+            let sprite_x_start = -sprite_height / 2.0 + sprite_screen_x as f32;
             let sprite_x_end = sprite_height / 2.0 + sprite_screen_x as f32;
-            
+
             let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
-            let x = (sprite_x_start  + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
-            let y = sprite_y_end as f32 + y_offset - scaled_size ;
-            if transform_y >= 0.0 && sprite_x_start > 0.0 && sprite_x_end < VIEWPORT_WIDTH+x_offset && buffer[(x  - x_offset) as usize]+y_offset < y+ scaled_size{
+            let x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
+            let y = sprite_y_end as f32 + y_offset - scaled_size;
+            if transform_y >= 0.0
+                && sprite_x_start > 0.0
+                && sprite_x_end < VIEWPORT_WIDTH + x_offset
+                && buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
+            {
                 let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
                 let scale = scaled_size / player_img.height() as f32 * 1.2;
-                canvas.draw(&player_img, DrawParam::default()
-                .dest([x - scaled_size*0.15 , y])
-                .scale([scale,scale]));
+                canvas.draw(
+                    &player_img,
+                    DrawParam::default()
+                        .dest([x - scaled_size * 0.15, y])
+                        .scale([scale, scale]),
+                );
             }
-            }
+        }
         Ok(())
     }
     fn calc_up_point(line_height: f32) -> f32 {
@@ -284,7 +274,7 @@ impl Game {
         canvas.draw(&mesh, DrawParam::default());
         Ok(())
     }
-    fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult{
+    fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         let counter = ctx.time.fps();
         // let text = Text::new(counter.to_string());
         let text = Text::new(TextFragment {
@@ -329,5 +319,102 @@ impl EventHandler for Game {
         self.map.draw_player_position(&mut canvas, &self.player)?;
         self.draw_fps_counter(&mut canvas, ctx)?;
         canvas.finish(ctx)
+    }
+    fn mouse_button_down_event(
+        &mut self,
+        ctx: &mut Context,
+        button: MouseButton,
+        x: f32,
+        y: f32,
+    ) -> Result<(), GameError> {
+        if let MouseButton::Left = button {
+            let mut new_view = None;
+            match &mut self.view {
+                View::MainMenu(view_data) => {
+                    new_view = view_data.check_mouse_click(x, y, ctx);
+                }
+                View::JoinGame(view_data) => {
+                    view_data.ip_input_active = false;
+                    view_data.name_input_active = false;
+                    new_view = view_data.check_mouse_click(x, y, ctx);
+                }
+                View::CreateGame(view_data) => {
+                    view_data.name_input_active = false;
+                    new_view = view_data.check_mouse_click(x, y, ctx);
+                }
+                View::Game(_) => {}
+            };
+            if let Some(view) = new_view {
+                self.view = view;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
+        match &mut self.view {
+            View::Game(_) => {}
+            View::MainMenu(_) => {}
+            View::JoinGame(view_data) => {
+                if view_data.ip_input_active
+                    && character.is_alphanumeric()
+                    && view_data.ip_address.contents().len() <= 20
+                    || character == '.'
+                    || character == ':'
+                {
+                    view_data.ip_address.add(character);
+                }
+                if view_data.name_input_active
+                    && character.is_alphanumeric()
+                    && view_data.name.contents().len() <= 10
+                {
+                    view_data.name.add(character);
+                }
+            }
+            View::CreateGame(view_data) => {
+                if view_data.name_input_active
+                    && character.is_alphanumeric()
+                    && view_data.name.contents().len() <= 10
+                {
+                    view_data.name.add(character);
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    fn key_down_event(
+        &mut self,
+        _ctx: &mut Context,
+        input: ggez::input::keyboard::KeyInput,
+        _repeated: bool,
+    ) -> Result<(), GameError> {
+        if let Some(keycode) = input.keycode {
+            if let keyboard::KeyCode::Back = keycode {
+                match &mut self.view {
+                    View::Game(_) => {}
+                    View::MainMenu(_) => {}
+                    View::JoinGame(view_data) => {
+                        if view_data.ip_input_active {
+                            view_data.ip_address =
+                                remove_input_text_last_letter(view_data.ip_address.contents());
+                        }
+                        if view_data.name_input_active {
+                            view_data.name =
+                                remove_input_text_last_letter(view_data.name.contents());
+                        }
+                    }
+                    View::CreateGame(view_data) => {
+                        if view_data.name_input_active {
+                            view_data.name =
+                                remove_input_text_last_letter(view_data.name.contents());
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 }
