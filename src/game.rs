@@ -4,7 +4,7 @@ pub use crate::player::Player;
 use crate::SCREEN_WIDTH;
 use ggez::glam::Vec2;
 use ggez::graphics::{
-    self, Color, DrawMode, DrawParam, InstanceArray, Mesh, MeshBuilder, PxScale, Text, TextFragment,
+    self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
 };
 use ggez::{Context, GameResult};
 pub const VIEWPORT_WIDTH: f32 = 370.0;
@@ -17,8 +17,9 @@ pub struct GameStruct {
     pub map: Map,
     pub player: Player,
     pub opponents: Vec<Player>,
+
     players_last_pos: Vec2,
-    players_last_dir:Direction,
+    players_last_dir: Direction,
     scene: MeshBuilder,
     buffer: Vec<f32>,
 }
@@ -32,24 +33,23 @@ impl GameStruct {
             player: Player::new(),
             opponents: vec![opponent],
             players_last_pos: Vec2 { x: 0.0, y: 0.0 },
-            players_last_dir:Direction::Up,
+            players_last_dir: Direction::Up,
             scene: MeshBuilder::new(),
             buffer: vec![],
         })
     }
 
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir{
+        if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
             self.trace_scene()?;
         }
         self.draw_opponents(canvas, ctx)?;
-        self.map.draw(canvas, ctx)?;
-        self.map.draw_player_position(canvas, &self.player)?;
+        self.map.draw(canvas,&self.player)?;
         self.draw_fps_counter(canvas, ctx)?;
-        
+        //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
         canvas.draw(&mesh, DrawParam::default());
-
+        //update last position stats
         self.players_last_pos = self.player.pos;
         self.players_last_dir = self.player.dir.clone();
         Ok(())
@@ -200,7 +200,7 @@ impl GameStruct {
             if edge {
                 self.draw_edge(line_height, last_height, i)?;
             }
-
+            self.draw_frame()?;
             self.buffer.push(GameStruct::calc_bottom_point(line_height));
             last_height = line_height;
             last_side = side;
@@ -227,11 +227,7 @@ impl GameStruct {
             .rectangle(DrawMode::stroke(1.0), frame, Color::BLACK)?;
         Ok(())
     }
-    fn draw_walls(
-        &mut self,
-        wall_height: f32,
-        line: i32,
-    ) -> GameResult {
+    fn draw_walls(&mut self, wall_height: f32, line: i32) -> GameResult {
         //calculate lowest and highest pixel to fill in current stripe
         let start_point = GameStruct::calc_up_point(wall_height);
         let end_point = GameStruct::calc_bottom_point(wall_height);
@@ -239,15 +235,10 @@ impl GameStruct {
         let y_offset = 20.0;
 
         self.draw_point(x, end_point + y_offset)?;
-        self.draw_point( x, start_point + y_offset)?;
+        self.draw_point(x, start_point + y_offset)?;
         Ok(())
     }
-    fn draw_edge(
-        &mut self,
-        wall_height: f32,
-        previous_height: f32,
-        line: i32,
-    ) -> GameResult {
+    fn draw_edge(&mut self, wall_height: f32, previous_height: f32, line: i32) -> GameResult {
         let y_offset = 20.0;
 
         if previous_height < wall_height {
@@ -272,20 +263,13 @@ impl GameStruct {
 
         Ok(())
     }
-    fn draw_point(
-        &mut self,
-        x: f32,
-        y: f32,
-    ) -> GameResult {
+    fn draw_point(&mut self, x: f32, y: f32) -> GameResult {
         let point = graphics::Rect::new(x, y, 1.0, 1.0);
         self.scene
             .rectangle(DrawMode::fill(), point, Color::BLACK)?;
         Ok(())
     }
-    fn draw_line(
-        &mut self,
-        points: &[Vec2],
-    ) -> GameResult {
+    fn draw_line(&mut self, points: &[Vec2]) -> GameResult {
         self.scene.line(points, 1.0, Color::BLACK)?;
         Ok(())
     }
