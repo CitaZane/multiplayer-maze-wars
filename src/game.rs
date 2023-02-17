@@ -131,6 +131,8 @@ impl GameStruct {
         }
         self.draw_opponents(canvas, ctx, buffer)?;
         self.map.draw(canvas, ctx)?;
+        self.map.draw_player_position(canvas, &self.player)?;
+        self.draw_fps_counter(canvas, ctx)?;
         Ok(())
     }
     fn draw_opponents(
