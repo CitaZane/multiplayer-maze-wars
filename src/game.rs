@@ -1,14 +1,14 @@
 use crate::map::Map;
 use crate::player::Direction;
 use crate::player::Player;
-use crate::SCREEN_WIDTH;
 use ggez::glam::Vec2;
 use ggez::{Context, GameResult};
 use ggez::graphics::{
     self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
 };
-const VIEWPORT_WIDTH: f32 = 370.0;
-const VIEWPORT_HEIGHT: f32 = 410.0;
+use crate::SCREEN_WIDTH;
+use crate::VIEWPORT_WIDTH;
+use crate::VIEWPORT_HEIGHT;
 
 const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
@@ -16,7 +16,7 @@ const Y: f32 = 20.0;
 pub struct GameStruct {
     pub map: Map,
     pub player: Player,
-    pub opponents: Vec<Player>,
+    opponents: Vec<Player>,
 
     players_last_pos: Vec2,
     players_last_dir: Direction,

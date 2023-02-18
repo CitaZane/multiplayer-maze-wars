@@ -118,7 +118,7 @@ impl Map {
         Mesh::from_data(ctx, mesh_builder.build())
     }
 
-    pub fn draw(&self, canvas: &mut graphics::Canvas,player: &Player,) -> GameResult {
+    pub fn draw(&self, canvas: &mut graphics::Canvas, player: &Player) -> GameResult {
         canvas.draw(&self.graphics, DrawParam::default());
         self.draw_player_position(canvas, player)?;
         Ok(())

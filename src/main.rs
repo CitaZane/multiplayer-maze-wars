@@ -14,7 +14,7 @@ pub mod state;
 pub mod view;
 const SCREEN_WIDTH: f32 = 600.0;
 const SCREEN_HEIGHT: f32 = 800.0;
-// const VIEWPORT_WIDTH: f32 = 370.0;
+const VIEWPORT_WIDTH: f32 = 370.0;
 const VIEWPORT_HEIGHT: f32 = 410.0;
 
 fn main() -> GameResult {

@@ -1,11 +1,11 @@
-use crate::SCREEN_WIDTH;
+use crate::{SCREEN_WIDTH, SCREEN_HEIGHT};
 use ggez::{
     glam::Vec2,
     graphics::{
         self, Color, DrawMode, DrawParam, Drawable, Image, PxScale, Rect, Text, TextAlign,
         TextFragment, TextLayout,
     },
-    Context, GameResult,
+    Context, GameResult, mint,
 };
 
 pub struct Button {
@@ -257,6 +257,14 @@ impl Drawer {
             DrawParam::from(Vec2::new(title_horizontal_offset, 100.0)),
         );
 
+        Ok(())
+    }
+    pub fn draw_eye(&self, canvas: &mut graphics::Canvas, ctx: &mut Context)->GameResult{
+        let img = ggez::graphics::Image::from_path(ctx, "/eye-front.png")?;
+        let dest = mint::Point2{ x: SCREEN_WIDTH/2.0 - 80.0, y: SCREEN_HEIGHT - 150.0 };
+        canvas.draw(&img, DrawParam::new()
+        .dest(dest)
+    );
         Ok(())
     }
 }

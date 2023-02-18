@@ -54,22 +54,19 @@ impl MainMenuStruct {
 
     pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         self.drawer.draw_title(canvas, ctx)?;
-
         self.drawer.draw_create_game_button(
             canvas,
             ctx,
             200.0,
             *self.element_rects.get("CREATE_GAME").unwrap(),
         )?;
-
         self.drawer.draw_join_game_button(
             canvas,
             ctx,
             275.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
         )?;
-        
-
+        self.drawer.draw_eye(canvas, ctx);
         Ok(())
     }
 
