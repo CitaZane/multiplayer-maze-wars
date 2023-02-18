@@ -23,20 +23,19 @@ impl State {
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         if let View::Game(game_data) = &mut self.view {
-            if ctx.keyboard.is_key_pressed(KeyCode::Up) {
+            if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W){
                 game_data.player.go_forward(&game_data.map.maze);
             }
-            if ctx.keyboard.is_key_pressed(KeyCode::Down) {
+            if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S){
                 game_data.player.go_backward(&game_data.map.maze);
             }
-            if ctx.keyboard.is_key_pressed(KeyCode::Left) {
+            if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A){
                 game_data.player.turn_left();
             }
-            if ctx.keyboard.is_key_pressed(KeyCode::Right) {
+            if ctx.keyboard.is_key_pressed(KeyCode::Right) || ctx.keyboard.is_key_pressed(KeyCode::D){
                 game_data.player.turn_right();
             }
         }
-
         Ok(())
     }
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
