@@ -7,9 +7,6 @@ use ggez::{Context, GameResult};
 use ggez::graphics::{
     self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
 };
-use std::time::Duration;
-use throttle::Throttle;
-
 const VIEWPORT_WIDTH: f32 = 370.0;
 const VIEWPORT_HEIGHT: f32 = 410.0;
 
