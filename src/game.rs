@@ -273,19 +273,13 @@ impl GameStruct {
         self.scene.line(points, 1.0, Color::BLACK)?;
         Ok(())
     }
-    fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        let counter = ctx.time.fps();
+    pub fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+        let counter = ctx.time.fps().trunc();
         let text = Text::new(TextFragment {
-            // `TextFragment` stores a string, and optional parameters which will override those
-            // of `Text` itself. This allows inlining differently formatted lines, words,
-            // or even individual letters, into the same block of text.
             text: counter.to_string(),
-            color: Some(Color::new(1.0, 0.0, 0.0, 1.0)),
-            // The font name refers to a loaded TTF, stored inside the `GraphicsContext`.
-            // A default font always exists and maps to LiberationMono-Regular.
+            color: Some(Color::new(0.0, 0.0, 0.0, 1.0)),
             font: Some("LiberationMono-Regular".into()),
-            scale: Some(PxScale::from(10.0)),
-            // This doesn't do anything at this point; can be used to omit fields in declarations.
+            scale: Some(PxScale::from(50.0)),
             ..Default::default()
         });
         canvas.draw(&text, DrawParam::default());

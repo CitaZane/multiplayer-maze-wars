@@ -40,12 +40,7 @@ impl EventHandler for State {
     }
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::WHITE);
-        // Draw code here...
-        // self.map.draw(&mut canvas, ctx)?;
         self.view.draw(&mut canvas, ctx)?;
-        // self.draw_scene(&mut canvas, ctx)?;
-        // self.map.draw_player_position(&mut canvas, &self.player)?;
-        // self.draw_fps_counter(&mut canvas, ctx)?;
         canvas.finish(ctx)
     }
     fn mouse_button_down_event(

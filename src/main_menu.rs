@@ -68,6 +68,7 @@ impl MainMenuStruct {
             275.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
         )?;
+        
 
         Ok(())
     }

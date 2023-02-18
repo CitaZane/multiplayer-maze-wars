@@ -50,7 +50,7 @@ impl Player {
         };
         self.go(maze, direction);
     }
-    pub fn go(&mut self, maze: &Vec<Vec<i32>>, direction: Direction) {
+    fn go(&mut self, maze: &Vec<Vec<i32>>, direction: Direction) {
         if self.throttle.accept().is_ok() {
             match direction {
                 Direction::Right => {

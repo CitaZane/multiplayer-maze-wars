@@ -13,7 +13,7 @@ const V_OFFSET: f32 = VIEWPORT_HEIGHT + 20.0 * 2.0;
 pub struct Map {
     pub maze: Vec<Vec<i32>>,
     graphics: Mesh,
-    pub player_arrow: Image,
+    player_arrow: Image,
 }
 // Map size 33X17
 impl Map {
