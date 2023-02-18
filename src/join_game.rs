@@ -114,7 +114,7 @@ impl JoinGameStruct {
             350.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
         )?;
-
+        self.drawer.draw_fps_counter(canvas, ctx).expect("Cant draw fps counter.");
         Ok(())
     }
 

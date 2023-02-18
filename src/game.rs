@@ -273,7 +273,7 @@ impl GameStruct {
         self.scene.line(points, 1.0, Color::BLACK)?;
         Ok(())
     }
-    pub fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+    fn draw_fps_counter(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         let counter = ctx.time.fps().trunc();
         let text = Text::new(TextFragment {
             text: counter.to_string(),

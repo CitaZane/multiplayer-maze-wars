@@ -66,7 +66,8 @@ impl MainMenuStruct {
             275.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
         )?;
-        self.drawer.draw_eye(canvas, ctx);
+        self.drawer.draw_eye(canvas, ctx).expect("Cant draw eye picture.");
+        self.drawer.draw_fps_counter(canvas, ctx).expect("Cant draw fps counter.");
         Ok(())
     }
 

@@ -267,4 +267,16 @@ impl Drawer {
     );
         Ok(())
     }
+    pub fn draw_fps_counter(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+        let counter = ctx.time.fps().trunc();
+        let text = Text::new(TextFragment {
+            text: counter.to_string(),
+            color: Some(Color::new(0.0, 0.0, 0.0, 1.0)),
+            font: Some("LiberationMono-Regular".into()),
+            scale: Some(PxScale::from(50.0)),
+            ..Default::default()
+        });
+        canvas.draw(&text, DrawParam::default());
+        Ok(())
+    }
 }
