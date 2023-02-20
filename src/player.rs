@@ -1,8 +1,8 @@
 use ggez::glam::Vec2;
+use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use throttle::Throttle;
 
-#[derive()]
 pub struct Player {
     pub pos: Vec2,
     pub dir: Direction,
@@ -10,7 +10,7 @@ pub struct Player {
     throttle: Throttle,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Direction {
     Up,
     Down,
@@ -138,37 +138,37 @@ impl Player {
         if self.dir == *opponent_dir {
             return Direction::Up;
         } else if self.dir.vec().x == opponent_dir.vec().x
-            || self.dir.vec().y == opponent_dir.vec().y 
+            || self.dir.vec().y == opponent_dir.vec().y
         {
             return Direction::Down;
-        }else{
-            match self.dir{
-                Direction::Up=>{
-                    if *opponent_dir == Direction::Left{
-                        return Direction::Left
-                    }else{
-                        return Direction::Right
+        } else {
+            match self.dir {
+                Direction::Up => {
+                    if *opponent_dir == Direction::Left {
+                        return Direction::Left;
+                    } else {
+                        return Direction::Right;
                     }
-                },
-                Direction::Down=>{
-                    if *opponent_dir == Direction::Right{
-                        return Direction::Left
-                    }else{
-                        return Direction::Right
+                }
+                Direction::Down => {
+                    if *opponent_dir == Direction::Right {
+                        return Direction::Left;
+                    } else {
+                        return Direction::Right;
                     }
-                },
-                Direction::Right=>{
-                    if *opponent_dir == Direction::Up{
-                        return Direction::Left
-                    }else{
-                        return Direction::Right
+                }
+                Direction::Right => {
+                    if *opponent_dir == Direction::Up {
+                        return Direction::Left;
+                    } else {
+                        return Direction::Right;
                     }
-                },
-                Direction::Left=>{
-                    if *opponent_dir == Direction::Down{
-                        return Direction::Left
-                    }else{
-                        return Direction::Right
+                }
+                Direction::Left => {
+                    if *opponent_dir == Direction::Down {
+                        return Direction::Left;
+                    } else {
+                        return Direction::Right;
                     }
                 }
             }

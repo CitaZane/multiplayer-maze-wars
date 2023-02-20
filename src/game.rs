@@ -3,15 +3,15 @@ use std::collections::HashMap;
 use crate::map::Map;
 use crate::player::Direction;
 use crate::player::Player;
+use crate::SCREEN_WIDTH;
+use crate::VIEWPORT_HEIGHT;
+use crate::VIEWPORT_WIDTH;
 use ggez::glam::Vec2;
 use ggez::graphics::Image;
-use ggez::{Context, GameResult};
 use ggez::graphics::{
     self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
 };
-use crate::SCREEN_WIDTH;
-use crate::VIEWPORT_WIDTH;
-use crate::VIEWPORT_HEIGHT;
+use ggez::{Context, GameResult};
 
 const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
@@ -21,7 +21,7 @@ pub struct GameStruct {
     pub player: Player,
     opponents: Vec<Player>,
 
-    opponent_img:HashMap<Direction,Image>,
+    opponent_img: HashMap<Direction, Image>,
     players_last_pos: Vec2,
     players_last_dir: Direction,
     scene: MeshBuilder,
@@ -36,22 +36,24 @@ impl GameStruct {
             map: Map::new(ctx),
             player: Player::new(),
             opponents: vec![opponent],
-            opponent_img:GameStruct::upload_opponet_images(ctx),
+            opponent_img: GameStruct::upload_opponet_images(ctx),
             players_last_pos: Vec2 { x: 0.0, y: 0.0 },
             players_last_dir: Direction::Up,
             scene: MeshBuilder::new(),
             buffer: vec![],
         })
     }
-    fn upload_opponet_images(ctx: &mut Context)->HashMap<Direction,Image>{
+    fn upload_opponet_images(ctx: &mut Context) -> HashMap<Direction, Image> {
         let mut images = HashMap::new();
         let img_back = graphics::Image::from_path(ctx, "/eye-back.png").expect("Missing eye image");
         images.insert(Direction::Up, img_back);
-        let img_front = graphics::Image::from_path(ctx, "/eye-front.png").expect("Missing eye image");
+        let img_front =
+            graphics::Image::from_path(ctx, "/eye-front.png").expect("Missing eye image");
         images.insert(Direction::Down, img_front);
         let img_left = graphics::Image::from_path(ctx, "/eye-left.png").expect("Missing eye image");
         images.insert(Direction::Left, img_left);
-        let img_right = graphics::Image::from_path(ctx, "/eye-right.png").expect("Missing eye image");
+        let img_right =
+            graphics::Image::from_path(ctx, "/eye-right.png").expect("Missing eye image");
         images.insert(Direction::Right, img_right);
         images
     }
@@ -60,7 +62,7 @@ impl GameStruct {
             self.trace_scene()?;
         }
         self.draw_opponents(canvas, ctx)?;
-        self.map.draw(canvas,&self.player)?;
+        self.map.draw(canvas, &self.player)?;
         self.draw_fps_counter(canvas, ctx)?;
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());

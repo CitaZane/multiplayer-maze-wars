@@ -1,9 +1,11 @@
 use local_ip_address::local_ip;
 use std::collections::HashMap;
+use std::sync::mpsc::Sender;
+use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::drawer::{Button, Drawer, Input};
-use crate::server::Server;
+use crate::server::{connect_client, Message, Server};
 use crate::view::View;
 use ggez::{
     graphics::{self, Rect, Text},
@@ -85,7 +87,9 @@ impl CreateGameStruct {
             275.0,
             *self.element_rects.get("CREATE_GAME").unwrap(),
         )?;
-        self.drawer.draw_fps_counter(canvas, ctx).expect("Cant draw fps counter.");
+        self.drawer
+            .draw_fps_counter(canvas, ctx)
+            .expect("Cant draw fps counter.");
         Ok(())
     }
 
@@ -94,6 +98,7 @@ impl CreateGameStruct {
         mouse_x: f32,
         mouse_y: f32,
         ctx: &mut Context,
+        send_ch: Sender<Message>,
     ) -> Option<View> {
         let mut new_view = None;
 
@@ -103,20 +108,15 @@ impl CreateGameStruct {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
-                    let my_local_ip = local_ip().unwrap();
                     let name = self.name.contents();
-                    let mut server = Server::new(my_local_ip);
+                    let my_local_ip = local_ip().unwrap();
+                    let mut server = Server::new(my_local_ip.to_string());
 
-                    thread::spawn(move || {
-                        // creating new server just so the thread has its own copy. I dont think this solution will work.
-                        // we will change it when problems will occur
-                        let server = Server::new(my_local_ip);
-                        server.start().unwrap();
-                    });
-
-                    server.connect_client(name).unwrap();
+                    thread::spawn(move || server.start().unwrap());
+                    thread::spawn(move || connect_client(my_local_ip.to_string(), name, send_ch));
 
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                    break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
                 }

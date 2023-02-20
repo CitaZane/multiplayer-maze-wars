@@ -1448,6 +1448,8 @@ version = "0.1.0"
 dependencies = [
  "ggez",
  "local-ip-address",
+ "serde",
+ "serde_json",
  "throttle",
 ]
 

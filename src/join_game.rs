@@ -2,6 +2,8 @@ use std::{
     collections::HashMap,
     net::{IpAddr, Ipv4Addr},
     str::FromStr,
+    sync::mpsc::Sender,
+    thread,
 };
 
 use ggez::{
@@ -11,7 +13,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer, Input},
-    server::Server,
+    server::{connect_client, Message, Server},
     view::View,
 };
 
@@ -114,7 +116,9 @@ impl JoinGameStruct {
             350.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
         )?;
-        self.drawer.draw_fps_counter(canvas, ctx).expect("Cant draw fps counter.");
+        self.drawer
+            .draw_fps_counter(canvas, ctx)
+            .expect("Cant draw fps counter.");
         Ok(())
     }
 
@@ -123,6 +127,7 @@ impl JoinGameStruct {
         mouse_x: f32,
         mouse_y: f32,
         ctx: &mut Context,
+        send_ch: Sender<Message>,
     ) -> Option<View> {
         let mut new_view = None;
         for (name, elem_rect) in &self.element_rects {
@@ -144,11 +149,11 @@ impl JoinGameStruct {
                 } else if name == "JOIN_GAME" {
                     let name = self.name.contents();
                     let server_ip = self.ip_address.contents();
-                    let mut server =
-                        Server::new(IpAddr::from(Ipv4Addr::from_str(&server_ip).unwrap()));
-                    server.connect_client(name).unwrap();
+
+                    thread::spawn(move || connect_client(server_ip, name, send_ch));
 
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                    break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
                 }
