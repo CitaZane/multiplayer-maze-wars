@@ -1,7 +1,10 @@
+use std::collections::HashMap;
+
 use crate::map::Map;
 use crate::player::Direction;
 use crate::player::Player;
 use ggez::glam::Vec2;
+use ggez::graphics::Image;
 use ggez::{Context, GameResult};
 use ggez::graphics::{
     self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
@@ -18,6 +21,7 @@ pub struct GameStruct {
     pub player: Player,
     opponents: Vec<Player>,
 
+    opponent_img:HashMap<Direction,Image>,
     players_last_pos: Vec2,
     players_last_dir: Direction,
     scene: MeshBuilder,
@@ -32,13 +36,25 @@ impl GameStruct {
             map: Map::new(ctx),
             player: Player::new(),
             opponents: vec![opponent],
+            opponent_img:GameStruct::upload_opponet_images(ctx),
             players_last_pos: Vec2 { x: 0.0, y: 0.0 },
             players_last_dir: Direction::Up,
             scene: MeshBuilder::new(),
             buffer: vec![],
         })
     }
-
+    fn upload_opponet_images(ctx: &mut Context)->HashMap<Direction,Image>{
+        let mut images = HashMap::new();
+        let img_back = graphics::Image::from_path(ctx, "/eye-back.png").expect("Missing eye image");
+        images.insert(Direction::Up, img_back);
+        let img_front = graphics::Image::from_path(ctx, "/eye-front.png").expect("Missing eye image");
+        images.insert(Direction::Down, img_front);
+        let img_left = graphics::Image::from_path(ctx, "/eye-left.png").expect("Missing eye image");
+        images.insert(Direction::Left, img_left);
+        let img_right = graphics::Image::from_path(ctx, "/eye-right.png").expect("Missing eye image");
+        images.insert(Direction::Right, img_right);
+        images
+    }
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
             self.trace_scene()?;
@@ -89,10 +105,13 @@ impl GameStruct {
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
                 && self.buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
             {
-                let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
+                // find correct direction
+                let player_dir = self.player.get_opponent_direction(&self.opponents[i].dir);
+                let player_img = &self.opponent_img[&player_dir];
+                // let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
                 let scale = scaled_size / player_img.height() as f32 * 1.2;
                 canvas.draw(
-                    &player_img,
+                    player_img,
                     DrawParam::default()
                         .dest([x - scaled_size * 0.15, y])
                         .scale([scale, scale]),

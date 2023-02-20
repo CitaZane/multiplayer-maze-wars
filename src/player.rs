@@ -1,5 +1,5 @@
-use std::time::Duration;
 use ggez::glam::Vec2;
+use std::time::Duration;
 use throttle::Throttle;
 
 #[derive()]
@@ -10,7 +10,7 @@ pub struct Player {
     throttle: Throttle,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Direction {
     Up,
     Down,
@@ -132,6 +132,46 @@ impl Player {
             Direction::Left => (1., 1.),
             Direction::Up => (0., 1.),
             Direction::Down => (1., 0.),
+        }
+    }
+    pub fn get_opponent_direction(&self, opponent_dir: &Direction) -> Direction {
+        if self.dir == *opponent_dir {
+            return Direction::Up;
+        } else if self.dir.vec().x == opponent_dir.vec().x
+            || self.dir.vec().y == opponent_dir.vec().y 
+        {
+            return Direction::Down;
+        }else{
+            match self.dir{
+                Direction::Up=>{
+                    if *opponent_dir == Direction::Left{
+                        return Direction::Left
+                    }else{
+                        return Direction::Right
+                    }
+                },
+                Direction::Down=>{
+                    if *opponent_dir == Direction::Right{
+                        return Direction::Left
+                    }else{
+                        return Direction::Right
+                    }
+                },
+                Direction::Right=>{
+                    if *opponent_dir == Direction::Up{
+                        return Direction::Left
+                    }else{
+                        return Direction::Right
+                    }
+                },
+                Direction::Left=>{
+                    if *opponent_dir == Direction::Down{
+                        return Direction::Left
+                    }else{
+                        return Direction::Right
+                    }
+                }
+            }
         }
     }
 }
