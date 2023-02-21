@@ -1,3 +1,4 @@
+use ggez::glam::Vec2;
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -11,6 +12,7 @@ use std::{
 pub enum Message {
     ClientJoined((String, String)),
     UpdateCounter(usize),
+    PlayerMoved(String, (f32, f32), (f32, f32)), // Name, Coordinates(x,y), Looking way (x, y) 
 }
 pub struct Server {
     pub socket: UdpSocket,
@@ -42,6 +44,9 @@ impl Server {
                     self.clients.insert(name.clone(), ip_address.clone());
                 }
                 Message::UpdateCounter(_) => {}
+                Message::PlayerMoved(name, coordinates, dir) => {
+
+                },
             };
 
             let m = serde_json::to_vec(&m).unwrap();

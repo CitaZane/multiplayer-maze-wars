@@ -7,7 +7,6 @@ use std::{
 use local_ip_address::local_ip;
 
 use crate::server::Message;
-
 pub struct Client {
     pub socket: UdpSocket,
     pub send_ch: Sender<Message>,
@@ -48,7 +47,8 @@ impl Client {
                 Message::ClientJoined((name, ip_address)) => {
                     println!("CLIENT: New user joined: {} {}", name, ip_address);
                 }
-                Message::UpdateCounter(num) => {}
+                Message::UpdateCounter(_num) => {}
+                Message::PlayerMoved(_, _, _) => {},
             };
 
             self.send_ch.send(m).unwrap();

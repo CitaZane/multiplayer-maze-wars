@@ -4,6 +4,7 @@ use std::time::Duration;
 use throttle::Throttle;
 
 pub struct Player {
+    pub name: String,
     pub pos: Vec2,
     pub dir: Direction,
     pub camera_plane: Vec2,
@@ -36,60 +37,66 @@ impl Player {
             dir: Direction::Right,
             camera_plane: Vec2 { x: 0.0, y: 0.65 },
             throttle: Throttle::new(Duration::from_millis(100), 1),
+            name: "".to_string(),
         }
     }
-    pub fn go_forward(&mut self, maze: &Vec<Vec<i32>>) {
-        self.go(maze, self.dir.clone());
+    pub fn go_forward(&mut self, maze: &Vec<Vec<i32>>) -> bool{
+        return self.go(maze, self.dir.clone());
     }
-    pub fn go_backward(&mut self, maze: &Vec<Vec<i32>>) {
+    pub fn go_backward(&mut self, maze: &Vec<Vec<i32>>) -> bool{
         let direction = match self.dir {
             Direction::Right => Direction::Left,
             Direction::Down => Direction::Up,
             Direction::Left => Direction::Right,
             Direction::Up => Direction::Down,
         };
-        self.go(maze, direction);
+        return self.go(maze, direction);
     }
-    fn go(&mut self, maze: &Vec<Vec<i32>>, direction: Direction) {
+    fn go(&mut self, maze: &Vec<Vec<i32>>, direction: Direction) -> bool {
         if self.throttle.accept().is_ok() {
             match direction {
                 Direction::Right => {
                     if self.pos.x >= (maze[0].len() - 1) as f32 {
-                        return;
+                        return false;
                     }
                     if maze[self.pos.y as usize][self.pos.x as usize + 1] == 0 {
-                        self.pos.x += 1.
+                        self.pos.x += 1.;
+                        return true
                     }
                 }
                 Direction::Down => {
                     if self.pos.x >= (maze.len() - 1) as f32 {
-                        return;
+                        return false;
                     }
                     if maze[self.pos.y as usize + 1][self.pos.x as usize] == 0 {
-                        self.pos.y += 1.
+                        self.pos.y += 1.;
+                        return true
                     }
                 }
                 Direction::Left => {
                     if self.pos.x < 1.0 {
-                        return;
+                        return false;
                     }
                     if maze[self.pos.y as usize][self.pos.x as usize - 1] == 0 {
-                        self.pos.x -= 1.
+                        self.pos.x -= 1.;
+                        return true
                     }
                 }
                 Direction::Up => {
                     if self.pos.y < 1.0 {
-                        return;
+                        return false;
                     }
                     if maze[self.pos.y as usize - 1][self.pos.x as usize] == 0 {
-                        self.pos.y -= 1.
+                        self.pos.y -= 1.;
+                        return true
                     }
                 }
             };
         }
+        return false
     }
-    pub fn turn_right(&mut self) {
-        if self.throttle.accept().is_ok() {
+    pub fn turn_right(&mut self) -> bool{
+        if self.throttle.accept().is_ok(){
             self.dir = match self.dir {
                 Direction::Right => Direction::Down,
                 Direction::Down => Direction::Left,
@@ -97,9 +104,11 @@ impl Player {
                 Direction::Up => Direction::Right,
             };
             self.configure_camera_plane();
-        }
+            return true
+        };
+        return false
     }
-    pub fn turn_left(&mut self) {
+    pub fn turn_left(&mut self) -> bool{
         if self.throttle.accept().is_ok() {
             self.dir = match self.dir {
                 Direction::Right => Direction::Up,
@@ -108,7 +117,9 @@ impl Player {
                 Direction::Up => Direction::Left,
             };
             self.configure_camera_plane();
+            return true
         }
+        return false
     }
     fn configure_camera_plane(&mut self) {
         self.camera_plane = match self.dir {

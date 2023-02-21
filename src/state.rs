@@ -14,6 +14,7 @@ use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
 use std::sync::mpsc;
 pub struct State {
+    pub client_name: String,
     pub view: View,
     pub client_socket: Option<UdpSocket>,
     pub server_ip: String,
@@ -29,6 +30,8 @@ impl State {
             server_ip: String::new(),
             client_socket: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
+            // client: todo!(),
+            client_name: "".to_string(),
         })
     }
 }
@@ -41,27 +44,51 @@ impl EventHandler for State {
             }
 
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
-                game_data.player.go_forward(&game_data.map.maze);
-                self.counter += 1;
-                // println!("server socket: {:?}", self.server_ip);
-                let m = serde_json::to_vec(&Message::UpdateCounter(self.counter)).unwrap();
-                self.client_socket
-                    .as_ref()
-                    .unwrap()
-                    .send_to(&m, self.server_ip.clone())?;
+                if game_data.player.go_forward(&game_data.map.maze) {
+                    // self.counter += 1;
+                    // println!("server socket: {:?}", self.server_ip);
+                    let m = prepare_player_data_to_send(&self.client_name, &game_data.player);
+                    self.client_socket
+                        .as_ref()
+                        .unwrap()
+                        .send_to(&m, self.server_ip.clone())?;
+                }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
-                game_data.player.go_backward(&game_data.map.maze);
+                if game_data.player.go_backward(&game_data.map.maze) {
+                    self.client_socket.as_ref().unwrap().send_to(
+                        &prepare_player_data_to_send(&self.client_name, &game_data.player),
+                        self.server_ip.clone(),
+                    )?;
+                }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A)
             {
-                game_data.player.turn_left();
+                if game_data.player.turn_left(){
+                    self.client_socket.as_ref().unwrap().send_to(
+                        &prepare_player_data_to_send(&self.client_name, &game_data.player),
+                        self.server_ip.clone(),
+                    )?;
+                }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Right)
                 || ctx.keyboard.is_key_pressed(KeyCode::D)
             {
-                game_data.player.turn_right();
+                if game_data.player.turn_right(){
+                    self.client_socket.as_ref().unwrap().send_to(
+                        &prepare_player_data_to_send(&self.client_name, &game_data.player),
+                        self.server_ip.clone(),
+                    )?;
+                }
+            }
+            fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
+                serde_json::to_vec(&Message::PlayerMoved(
+                    player_name.clone(),
+                    (player_data.pos.x, player_data.pos.y),
+                    (player_data.dir.vec().x, player_data.dir.vec().y),
+                ))
+                .expect("Cant disserialize.")
             }
         }
         Ok(())
@@ -104,17 +131,18 @@ impl EventHandler for State {
                     match previous_view {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
+                            self.client_name = view_data.name.contents();
+
                             let server_ip = view_data.ip_address.contents() + ":35353";
                             let send_ch = self.channels.0.clone();
                             let client = Client::new(send_ch, name);
-
                             self.client_socket = Some(client.socket.try_clone().unwrap());
                             self.server_ip = server_ip.to_string();
-
                             thread::spawn(move || client.listen_for_messages(server_ip));
                         }
                         View::CreateGame(view_data) => {
                             let name = view_data.name.contents();
+                            self.client_name = view_data.name.contents();
                             let send_ch = self.channels.0.clone();
 
                             // create client
