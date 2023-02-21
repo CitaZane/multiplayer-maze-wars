@@ -1,6 +1,6 @@
 use std::{
     collections::HashMap,
-    net::{IpAddr, Ipv4Addr},
+    net::{IpAddr, Ipv4Addr, UdpSocket},
     str::FromStr,
     sync::mpsc::Sender,
     thread,
@@ -14,6 +14,7 @@ use ggez::{
 use crate::{
     drawer::{Button, Drawer, Input},
     server::{connect_client, Message, Server},
+    state::State,
     view::View,
 };
 
@@ -147,11 +148,6 @@ impl JoinGameStruct {
                         self.ip_input_active = false;
                     }
                 } else if name == "JOIN_GAME" {
-                    let name = self.name.contents();
-                    let server_ip = self.ip_address.contents();
-
-                    thread::spawn(move || connect_client(server_ip, name, send_ch));
-
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                     break;
                 } else if name == "BACK_ARROW_IMG" {

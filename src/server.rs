@@ -12,6 +12,7 @@ use local_ip_address::local_ip;
 
 pub enum Message {
     ClientJoined((String, String)),
+    UpdateCounter(usize),
 }
 pub struct Server {
     pub socket: UdpSocket,
@@ -42,6 +43,7 @@ impl Server {
                 Message::ClientJoined((name, ip_address)) => {
                     self.clients.insert(name.clone(), ip_address.clone());
                 }
+                Message::UpdateCounter(num) => {}
             };
 
             let m = serde_json::to_vec(&m).unwrap();
@@ -83,6 +85,7 @@ pub fn connect_client(
             Message::ClientJoined((name, ip_address)) => {
                 println!("CLIENT: New user joined: {} {}", name, ip_address);
             }
+            Message::UpdateCounter(num) => {}
         };
 
         send_ch.send(m).unwrap();

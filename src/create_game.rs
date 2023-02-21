@@ -108,13 +108,6 @@ impl CreateGameStruct {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
-                    let name = self.name.contents();
-                    let my_local_ip = local_ip().unwrap();
-                    let mut server = Server::new(my_local_ip.to_string());
-
-                    thread::spawn(move || server.start().unwrap());
-                    thread::spawn(move || connect_client(my_local_ip.to_string(), name, send_ch));
-
                     new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                     break;
                 } else if name == "BACK_ARROW_IMG" {

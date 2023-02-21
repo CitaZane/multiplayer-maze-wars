@@ -1,16 +1,18 @@
 use std::net::UdpSocket;
 use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
 
 use crate::main_menu::MainMenuStruct;
 pub use crate::map::Map;
 pub use crate::player::Player;
-use crate::server::Message;
+use crate::server::{connect_client, Message, Server};
 use crate::view::{remove_input_text_last_letter, View};
 // pub use crate::view::View;
 use ggez::event::{EventHandler, MouseButton};
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
+use local_ip_address::local_ip;
 use std::sync::mpsc;
 pub struct State {
     pub view: View,
@@ -39,11 +41,13 @@ impl EventHandler for State {
 
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
                 game_data.player.go_forward(&game_data.map.maze);
-                // self.counter += 1;
-                // self.server_socket
-                //     .as_ref()
-                //     .unwrap()
-                //     .send(&serde_json::to_vec(&self.counter).unwrap())?;
+                self.counter += 1;
+                println!("server socket: {:?}", self.server_socket.as_ref());
+                let m = serde_json::to_vec(&Message::UpdateCounter(self.counter)).unwrap();
+                self.server_socket.as_ref().unwrap().send_to(
+                    &m,
+                    self.server_socket.as_ref().unwrap().local_addr().unwrap(),
+                )?;
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
@@ -90,7 +94,36 @@ impl EventHandler for State {
                 }
                 View::Game(_) => {}
             };
+
             if let Some(view) = new_view {
+                if let View::Game(_) = &view {
+                    let previous_view = &self.view;
+                    // if create game was previously -> create server
+                    // if join game was previously -> connect to server
+                    match previous_view {
+                        View::JoinGame(view_data) => {
+                            let name = view_data.name.contents();
+                            let server_ip = view_data.ip_address.contents();
+                            let send_ch = self.channels.0.clone();
+                            self.server_socket =
+                                Some(UdpSocket::bind(server_ip.clone() + ":34254").unwrap());
+                            thread::spawn(move || connect_client(server_ip, name, send_ch));
+                        }
+                        View::CreateGame(view_data) => {
+                            let name = view_data.name.contents();
+                            let my_local_ip = local_ip().unwrap();
+                            let mut server = Server::new(my_local_ip.to_string());
+                            self.server_socket = Some(server.socket.try_clone().unwrap());
+                            let send_ch = self.channels.0.clone();
+                            thread::spawn(move || server.start().unwrap());
+                            thread::spawn(move || {
+                                connect_client(my_local_ip.to_string(), name, send_ch)
+                            });
+                        }
+                        View::Game(_) => {}
+                        View::MainMenu(_) => {}
+                    }
+                }
                 self.view = view;
             }
         }
