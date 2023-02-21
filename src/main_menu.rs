@@ -7,7 +7,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer},
-    view::View,
+    view::View, game::GameStruct,
 };
 
 use super::{create_game::CreateGameStruct, join_game::JoinGameStruct};
@@ -87,7 +87,12 @@ impl MainMenuStruct {
                 if name == "CREATE_GAME" {
                     new_view = Some(View::CreateGame(CreateGameStruct::new(ctx).unwrap()));
                 } else if name == "JOIN_GAME" {
-                    new_view = Some(View::JoinGame(JoinGameStruct::new(ctx).unwrap()));
+
+                    new_view = Some(View::JoinGame(JoinGameStruct::new(ctx).unwrap())); // Normal MODE!
+
+                    // new_view = Some(View::Game(GameStruct::new(ctx).unwrap())); // Dev Option !
+                    // break;                                                      // For fast boot!
+                                                                                // Comment in for normal work!
                 }
             }
         }

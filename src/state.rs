@@ -1,19 +1,25 @@
 use std::net::UdpSocket;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
+use std::time::Duration;
 
 use crate::client::Client;
+use crate::game::GameStruct;
 use crate::main_menu::MainMenuStruct;
 pub use crate::map::Map;
+use crate::player::Direction;
 pub use crate::player::Player;
 use crate::server::{Message, Server};
 use crate::view::{remove_input_text_last_letter, View};
 use ggez::event::{EventHandler, MouseButton};
+use ggez::glam::Vec2;
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
+use throttle::Throttle;
 use std::sync::mpsc;
 pub struct State {
+    game_struct: GameStruct,
     pub client_name: String,
     pub view: View,
     pub client_socket: Option<UdpSocket>,
@@ -30,8 +36,8 @@ impl State {
             server_ip: String::new(),
             client_socket: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            // client: todo!(),
             client_name: "".to_string(),
+            game_struct: GameStruct::new(ctx).expect("Cant create GameStruct object."),
         })
     }
 }
@@ -40,7 +46,28 @@ impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         if let View::Game(game_data) = &mut self.view {
             if let Ok(msg) = self.channels.1.try_recv() {
-                println!("MAIN THREAD: {:?}", msg);
+                // println!("MAIN THREAD: {:?}", msg);
+                match msg {
+                    Message::ClientJoined(msg) => {
+                        self.game_struct.opponents.push(Player {
+                            name: msg.0,
+                            pos: Vec2::new(1., 1.),
+                            dir: Direction::Right,
+                            camera_plane: Vec2 { x: 0.0, y: 0.65 },
+                            throttle: Throttle::new(Duration::from_millis(100), 1),
+                        });
+                    }
+                    Message::PlayerMoved(name, cor, dir) => {
+                        for opponent in self.game_struct.opponents.iter_mut() {
+                            if opponent.name == name{
+                                opponent.pos.x = cor.0;
+                                opponent.pos.y = cor.1;
+                                // opponent.dir.vec().x = dir.0;
+                                // opponent.dir.vec().y = dir.1;
+                            }
+                        }
+                    }
+                }
             }
 
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
@@ -65,7 +92,7 @@ impl EventHandler for State {
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A)
             {
-                if game_data.player.turn_left(){
+                if game_data.player.turn_left() {
                     self.client_socket.as_ref().unwrap().send_to(
                         &prepare_player_data_to_send(&self.client_name, &game_data.player),
                         self.server_ip.clone(),
@@ -75,7 +102,7 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Right)
                 || ctx.keyboard.is_key_pressed(KeyCode::D)
             {
-                if game_data.player.turn_right(){
+                if game_data.player.turn_right() {
                     self.client_socket.as_ref().unwrap().send_to(
                         &prepare_player_data_to_send(&self.client_name, &game_data.player),
                         self.server_ip.clone(),
@@ -154,6 +181,7 @@ impl EventHandler for State {
 
                             self.client_socket = Some(client.socket.try_clone().unwrap());
                             self.server_ip = server_ip.to_string();
+                            server.clients.insert(self.client_name.clone(), self.server_ip.clone());
 
                             thread::spawn(move || server.start().unwrap());
                             thread::spawn(move || {

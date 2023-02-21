@@ -8,7 +8,7 @@ pub struct Player {
     pub pos: Vec2,
     pub dir: Direction,
     pub camera_plane: Vec2,
-    throttle: Throttle,
+    pub throttle: Throttle,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]

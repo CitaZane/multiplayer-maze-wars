@@ -41,14 +41,16 @@ impl Client {
                 .socket
                 .recv_from(&mut buf)
                 .expect("Didnt receive any data");
-            let m: Message = serde_json::from_slice(&buf[..amt]).unwrap();
+            let m: Message = serde_json::from_slice(&buf[..amt]).expect("Cant serialize from slice.");
 
             match &m {
                 Message::ClientJoined((name, ip_address)) => {
                     println!("CLIENT: New user joined: {} {}", name, ip_address);
                 }
-                Message::UpdateCounter(_num) => {}
-                Message::PlayerMoved(_, _, _) => {},
+                // Message::UpdateCounter(_num) => {}
+                Message::PlayerMoved(name, cor, dir) => {
+                    println!("Client: {:?}", &m)
+                },
             };
 
             self.send_ch.send(m).unwrap();

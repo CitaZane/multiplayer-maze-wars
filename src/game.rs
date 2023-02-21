@@ -19,7 +19,7 @@ const Y: f32 = 20.0;
 pub struct GameStruct {
     pub map: Map,
     pub player: Player,
-    opponents: Vec<Player>,
+    pub opponents: Vec<Player>,
 
     opponent_img: HashMap<Direction, Image>,
     players_last_pos: Vec2,
