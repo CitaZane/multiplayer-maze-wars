@@ -6,8 +6,6 @@ use std::{
     sync::mpsc::Sender,
 };
 
-use local_ip_address::local_ip;
-
 #[derive(Serialize, Deserialize, Debug)]
 
 pub enum Message {
@@ -23,7 +21,7 @@ impl Server {
     pub fn new(ip_address: String) -> Server {
         Server {
             clients: HashMap::new(),
-            socket: UdpSocket::bind(ip_address + ":34254").unwrap(),
+            socket: UdpSocket::bind(ip_address + ":35353").unwrap(),
         }
     }
 
@@ -63,22 +61,25 @@ impl Server {
 }
 
 pub fn connect_client(
-    server_ip_address: String,
+    client_socket: UdpSocket,
     name: String,
+    server_ip_address: String,
     send_ch: Sender<Message>,
 ) -> Result<(), std::io::Error> {
-    let my_local_ip = local_ip().unwrap();
-    let socket = UdpSocket::bind(my_local_ip.to_string() + ":0")?;
-
-    let message = Message::ClientJoined((name, socket.local_addr().unwrap().to_string()));
+    let message = Message::ClientJoined((name, client_socket.local_addr().unwrap().to_string()));
     let message_bytes = serde_json::to_vec(&message).unwrap();
-    socket
-        .send_to(&message_bytes, server_ip_address.to_string() + ":34254")
+    client_socket
+        .send_to(
+            &message_bytes,
+            SocketAddr::from_str(&server_ip_address).unwrap(),
+        )
         .expect("Error on send");
 
     let mut buf = [0; 2048];
     loop {
-        let (amt, _) = socket.recv_from(&mut buf).expect("Didnt receive any data");
+        let (amt, _) = client_socket
+            .recv_from(&mut buf)
+            .expect("Didnt receive any data");
         let m: Message = serde_json::from_slice(&buf[..amt]).unwrap();
 
         match &m {

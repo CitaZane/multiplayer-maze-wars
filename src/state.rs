@@ -16,7 +16,8 @@ use local_ip_address::local_ip;
 use std::sync::mpsc;
 pub struct State {
     pub view: View,
-    pub server_socket: Option<UdpSocket>,
+    pub client_socket: Option<UdpSocket>,
+    pub server_ip: String,
     pub counter: usize,
     pub channels: (Sender<Message>, Receiver<Message>),
 }
@@ -26,7 +27,8 @@ impl State {
         Ok(State {
             channels: mpsc::channel(),
             counter: 0,
-            server_socket: None,
+            server_ip: String::new(),
+            client_socket: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
         })
     }
@@ -42,12 +44,12 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
                 game_data.player.go_forward(&game_data.map.maze);
                 self.counter += 1;
-                println!("server socket: {:?}", self.server_socket.as_ref());
+                // println!("server socket: {:?}", self.server_socket.as_ref());
                 let m = serde_json::to_vec(&Message::UpdateCounter(self.counter)).unwrap();
-                self.server_socket.as_ref().unwrap().send_to(
-                    &m,
-                    self.server_socket.as_ref().unwrap().local_addr().unwrap(),
-                )?;
+                self.client_socket
+                    .as_ref()
+                    .unwrap()
+                    .send_to(&m, self.server_ip.clone())?;
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
@@ -103,21 +105,36 @@ impl EventHandler for State {
                     match previous_view {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
-                            let server_ip = view_data.ip_address.contents();
+                            let server_ip = view_data.ip_address.contents() + ":35353";
+                            let my_local_ip = local_ip().unwrap();
                             let send_ch = self.channels.0.clone();
-                            self.server_socket =
-                                Some(UdpSocket::bind(server_ip.clone() + ":34254").unwrap());
-                            thread::spawn(move || connect_client(server_ip, name, send_ch));
+                            self.client_socket =
+                                Some(UdpSocket::bind(my_local_ip.to_string() + ":0").unwrap());
+                            self.server_ip = server_ip.to_string();
+                            let client_socket =
+                                self.client_socket.as_ref().unwrap().try_clone().unwrap();
+                            thread::spawn(move || {
+                                connect_client(client_socket, name, server_ip, send_ch)
+                            });
                         }
                         View::CreateGame(view_data) => {
                             let name = view_data.name.contents();
                             let my_local_ip = local_ip().unwrap();
-                            let mut server = Server::new(my_local_ip.to_string());
-                            self.server_socket = Some(server.socket.try_clone().unwrap());
                             let send_ch = self.channels.0.clone();
+
+                            let mut server = Server::new(my_local_ip.to_string());
+                            let server_ip =
+                                server.socket.try_clone().unwrap().local_addr().unwrap();
+
+                            self.client_socket =
+                                Some(UdpSocket::bind(my_local_ip.to_string() + ":0").unwrap());
+                            self.server_ip = server_ip.to_string();
+
+                            let client_socket =
+                                self.client_socket.as_ref().unwrap().try_clone().unwrap();
                             thread::spawn(move || server.start().unwrap());
                             thread::spawn(move || {
-                                connect_client(my_local_ip.to_string(), name, send_ch)
+                                connect_client(client_socket, name, server_ip.to_string(), send_ch)
                             });
                         }
                         View::Game(_) => {}
