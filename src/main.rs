@@ -2,6 +2,7 @@ use ggez::conf::{Conf, WindowMode, WindowSetup};
 use ggez::event;
 use ggez::{ContextBuilder, GameResult};
 use state::State;
+pub mod client;
 pub mod create_game;
 pub mod drawer;
 pub mod game;

@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 
 use crate::drawer::{Button, Drawer, Input};
-use crate::server::{connect_client, Message, Server};
+use crate::server::{Message, Server};
 use crate::view::View;
 use ggez::{
     graphics::{self, Rect, Text},

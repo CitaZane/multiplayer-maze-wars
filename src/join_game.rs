@@ -13,7 +13,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer, Input},
-    server::{connect_client, Message, Server},
+    server::{Message, Server},
     state::State,
     view::View,
 };

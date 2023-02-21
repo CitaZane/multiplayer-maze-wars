@@ -1,3 +1,4 @@
+use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -18,10 +19,11 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new(ip_address: String) -> Server {
+    pub fn new() -> Server {
+        let my_local_ip = local_ip().unwrap();
         Server {
             clients: HashMap::new(),
-            socket: UdpSocket::bind(ip_address + ":35353").unwrap(),
+            socket: UdpSocket::bind(my_local_ip.to_string() + ":35353").unwrap(),
         }
     }
 
@@ -57,41 +59,5 @@ impl Server {
             // let echo = std::str::from_utf8(&buf[..amt]).unwrap();
             // self.socket.send_to(&d, &src)?;
         }
-    }
-}
-
-pub fn connect_client(
-    client_socket: UdpSocket,
-    name: String,
-    server_ip_address: String,
-    send_ch: Sender<Message>,
-) -> Result<(), std::io::Error> {
-    let message = Message::ClientJoined((name, client_socket.local_addr().unwrap().to_string()));
-    let message_bytes = serde_json::to_vec(&message).unwrap();
-    client_socket
-        .send_to(
-            &message_bytes,
-            SocketAddr::from_str(&server_ip_address).unwrap(),
-        )
-        .expect("Error on send");
-
-    let mut buf = [0; 2048];
-    loop {
-        let (amt, _) = client_socket
-            .recv_from(&mut buf)
-            .expect("Didnt receive any data");
-        let m: Message = serde_json::from_slice(&buf[..amt]).unwrap();
-
-        match &m {
-            Message::ClientJoined((name, ip_address)) => {
-                println!("CLIENT: New user joined: {} {}", name, ip_address);
-            }
-            Message::UpdateCounter(num) => {}
-        };
-
-        send_ch.send(m).unwrap();
-
-        // let echo = std::str::from_utf8(&buf[..amt]).unwrap();
-        // println!("CLIENT: {:?}", d);
     }
 }

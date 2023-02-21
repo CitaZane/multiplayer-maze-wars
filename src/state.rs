@@ -2,17 +2,17 @@ use std::net::UdpSocket;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
 
+use crate::client::Client;
 use crate::main_menu::MainMenuStruct;
 pub use crate::map::Map;
 pub use crate::player::Player;
-use crate::server::{connect_client, Message, Server};
+use crate::server::{Message, Server};
 use crate::view::{remove_input_text_last_letter, View};
 // pub use crate::view::View;
 use ggez::event::{EventHandler, MouseButton};
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
-use local_ip_address::local_ip;
 use std::sync::mpsc;
 pub struct State {
     pub view: View,
@@ -44,7 +44,7 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
                 game_data.player.go_forward(&game_data.map.maze);
                 self.counter += 1;
-                // println!("server socket: {:?}", self.server_socket.as_ref());
+                // println!("server socket: {:?}", self.server_ip);
                 let m = serde_json::to_vec(&Message::UpdateCounter(self.counter)).unwrap();
                 self.client_socket
                     .as_ref()
@@ -106,35 +106,31 @@ impl EventHandler for State {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
                             let server_ip = view_data.ip_address.contents() + ":35353";
-                            let my_local_ip = local_ip().unwrap();
                             let send_ch = self.channels.0.clone();
-                            self.client_socket =
-                                Some(UdpSocket::bind(my_local_ip.to_string() + ":0").unwrap());
+                            let client = Client::new(send_ch, name);
+
+                            self.client_socket = Some(client.socket.try_clone().unwrap());
                             self.server_ip = server_ip.to_string();
-                            let client_socket =
-                                self.client_socket.as_ref().unwrap().try_clone().unwrap();
-                            thread::spawn(move || {
-                                connect_client(client_socket, name, server_ip, send_ch)
-                            });
+
+                            thread::spawn(move || client.listen_for_messages(server_ip));
                         }
                         View::CreateGame(view_data) => {
                             let name = view_data.name.contents();
-                            let my_local_ip = local_ip().unwrap();
                             let send_ch = self.channels.0.clone();
 
-                            let mut server = Server::new(my_local_ip.to_string());
+                            // create client
+                            let client = Client::new(send_ch, name);
+
+                            let mut server = Server::new();
                             let server_ip =
                                 server.socket.try_clone().unwrap().local_addr().unwrap();
 
-                            self.client_socket =
-                                Some(UdpSocket::bind(my_local_ip.to_string() + ":0").unwrap());
+                            self.client_socket = Some(client.socket.try_clone().unwrap());
                             self.server_ip = server_ip.to_string();
 
-                            let client_socket =
-                                self.client_socket.as_ref().unwrap().try_clone().unwrap();
                             thread::spawn(move || server.start().unwrap());
                             thread::spawn(move || {
-                                connect_client(client_socket, name, server_ip.to_string(), send_ch)
+                                client.listen_for_messages(server_ip.to_string())
                             });
                         }
                         View::Game(_) => {}
