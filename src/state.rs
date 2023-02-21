@@ -8,7 +8,6 @@ pub use crate::map::Map;
 pub use crate::player::Player;
 use crate::server::{Message, Server};
 use crate::view::{remove_input_text_last_letter, View};
-// pub use crate::view::View;
 use ggez::event::{EventHandler, MouseButton};
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};

@@ -4,7 +4,6 @@ use std::{
     collections::HashMap,
     net::{SocketAddr, UdpSocket},
     str::FromStr,
-    sync::mpsc::Sender,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -29,13 +28,12 @@ impl Server {
 
     pub fn start(&mut self) -> std::io::Result<()> {
         println!("Starting server...");
-        println!("{:?}", self.socket);
         println!("");
 
         let mut buf = [0; 2048];
 
         loop {
-            let (amt, src) = self.socket.recv_from(&mut buf)?;
+            let (amt, _src) = self.socket.recv_from(&mut buf)?;
             let m: Message = serde_json::from_slice(&buf[..amt]).unwrap();
             println!("SERVER: {:?}", m);
 
@@ -43,21 +41,14 @@ impl Server {
                 Message::ClientJoined((name, ip_address)) => {
                     self.clients.insert(name.clone(), ip_address.clone());
                 }
-                Message::UpdateCounter(num) => {}
+                Message::UpdateCounter(_) => {}
             };
 
             let m = serde_json::to_vec(&m).unwrap();
             for client in &self.clients {
                 self.socket
                     .send_to(&m, SocketAddr::from_str(client.1).unwrap())?;
-
-                // println!("SRC: {}", src);
-                // println!("CLIENT IP: {}", client.1);
-                // send game state
             }
-            // let d = serde_json::to_vec(&data).unwrap();
-            // let echo = std::str::from_utf8(&buf[..amt]).unwrap();
-            // self.socket.send_to(&d, &src)?;
         }
     }
 }
