@@ -68,18 +68,22 @@ impl CreateGameStruct {
         elems
     }
 
+    pub fn draw_error_message(&self, canvas: &mut graphics::Canvas) {
+        let mut text = Text::new("Server already running on this network");
+        let create_game_btn_rect = self.element_rects.get("CREATE_GAME").unwrap();
+        let text_x = create_game_btn_rect.x + create_game_btn_rect.w / 2.0;
+        let text_y = create_game_btn_rect.y + create_game_btn_rect.h + 10.0;
+        text.set_layout(TextLayout {
+            v_align: TextAlign::Begin,
+            h_align: TextAlign::Middle,
+        });
+
+        canvas.draw(&text, DrawParam::from([text_x, text_y]).color(Color::RED));
+    }
+
     pub fn draw(&self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         if self.display_error {
-            let mut text = Text::new("Server already running on this network");
-            let create_game_btn_rect = self.element_rects.get("CREATE_GAME").unwrap();
-            let text_x = create_game_btn_rect.x + create_game_btn_rect.w / 2.0;
-            let text_y = create_game_btn_rect.y + create_game_btn_rect.h + 10.0;
-            text.set_layout(TextLayout {
-                v_align: TextAlign::Begin,
-                h_align: TextAlign::Middle,
-            });
-
-            canvas.draw(&text, DrawParam::from([text_x, text_y]).color(Color::RED));
+            self.draw_error_message(canvas)
         }
         self.drawer.draw_title(canvas, ctx)?;
         self.drawer.draw_name_input(
@@ -126,24 +130,12 @@ impl CreateGameStruct {
                 } else if name == "CREATE_GAME" {
                     match UdpSocket::bind("192.168.1.126:35353") {
                         Ok(_) => {
-                            println!("blabla");
                             new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                         }
                         Err(_) => {
                             self.display_error = true;
-                            println!("port in use");
                         }
                     }
-
-                    // match portpicker::is_free(35353) {
-                    //     true => {
-                    //         println!("blabla");
-                    //         new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
-                    //     }
-                    //     false => {
-                    //         println!("port in use");
-                    //     }
-                    // }
                     break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));

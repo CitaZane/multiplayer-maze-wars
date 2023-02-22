@@ -151,7 +151,6 @@ impl EventHandler for State {
             };
 
             if let Some(view) = new_view {
-                println!("lol");
                 if let View::Game(_) = &view {
                     let previous_view = &self.view;
                     // if create game was previously -> create server
