@@ -16,8 +16,8 @@ use ggez::glam::Vec2;
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
-use throttle::Throttle;
 use std::sync::mpsc;
+use throttle::Throttle;
 pub struct State {
     game_struct: GameStruct,
     pub client_name: String,
@@ -59,7 +59,7 @@ impl EventHandler for State {
                     }
                     Message::PlayerMoved(name, cor, dir) => {
                         for opponent in self.game_struct.opponents.iter_mut() {
-                            if opponent.name == name{
+                            if opponent.name == name {
                                 opponent.pos.x = cor.0;
                                 opponent.pos.y = cor.1;
                                 // opponent.dir.vec().x = dir.0;
@@ -151,6 +151,7 @@ impl EventHandler for State {
             };
 
             if let Some(view) = new_view {
+                println!("lol");
                 if let View::Game(_) = &view {
                     let previous_view = &self.view;
                     // if create game was previously -> create server
@@ -181,7 +182,9 @@ impl EventHandler for State {
 
                             self.client_socket = Some(client.socket.try_clone().unwrap());
                             self.server_ip = server_ip.to_string();
-                            server.clients.insert(self.client_name.clone(), self.server_ip.clone());
+                            server
+                                .clients
+                                .insert(self.client_name.clone(), self.server_ip.clone());
 
                             thread::spawn(move || server.start().unwrap());
                             thread::spawn(move || {
