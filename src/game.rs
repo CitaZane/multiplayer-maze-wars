@@ -89,17 +89,17 @@ impl GameStruct {
             let sprite_screen_x = (VIEWPORT_WIDTH as f32 / 2.0) * (1. + transform_x / transform_y);
 
             // calc the height of the sprite plane
-            let h = 165.0;
-            let sprite_height = (VIEWPORT_HEIGHT as f32 / transform_y).abs() as f32;
+            let h = 150.0;
+            let sprite_height = (VIEWPORT_HEIGHT*0.8 as f32 / transform_y).abs() as f32;
             let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
             let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT / 2.0;
 
             let sprite_x_start = -sprite_height / 2.0 + sprite_screen_x as f32;
             let sprite_x_end = sprite_height / 2.0 + sprite_screen_x as f32;
 
-            let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT;
+            let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT * 0.8;
             let x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
-            let y = sprite_y_end as f32 + y_offset - scaled_size;
+            let y = sprite_y_end as f32 + y_offset - scaled_size* 1.1;
             if transform_y >= 0.0
                 && sprite_x_start > 0.0
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
