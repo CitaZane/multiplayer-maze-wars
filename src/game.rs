@@ -59,7 +59,6 @@ impl GameStruct {
         if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
             self.trace_scene()?;
         }
-        self.draw_opponents(canvas, ctx)?;
         self.map.draw(canvas, &self.player)?;
         // Helper for displaying opponents on map
         self.map.draw_opponents(ctx,canvas, &self.opponents)?;
@@ -67,6 +66,7 @@ impl GameStruct {
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
         canvas.draw(&mesh, DrawParam::default());
+        self.draw_opponents(canvas, ctx)?;
         //update last position stats
         self.players_last_pos = self.player.pos;
         self.players_last_dir = self.player.dir.clone();
