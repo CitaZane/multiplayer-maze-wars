@@ -10,6 +10,7 @@ use std::{
 #[derive(Serialize, Deserialize, Debug)]
 
 pub enum Message {
+    OpponentList(Vec<String>),
     ClientJoined((String, String)),              // Name, ip-address
     PlayerMoved(String, (f32, f32), (f32, f32)), // Name, Coordinates(x,y), Direction (x, y)
 }
@@ -39,17 +40,26 @@ impl Server {
             println!("SERVER: {:?}", m);
 
             match &m {
-                Message::ClientJoined((name, ip_address)) => {
+                Message::ClientJoined((name, ip_address)) => {   
                     self.clients.insert(name.clone(), ip_address.clone());
+                    self.send_user_list(name);
                     self.send_to_all_clients(m);
                 }
                 Message::PlayerMoved(_, _, _) => {
                     self.send_to_all_clients(m);
                 }
+                _ => {}
             };
         }
     }
-
+    fn send_user_list(&self, client:&String){
+        // send message back to sender
+        let list =  Vec::from_iter(self.clients.keys()).iter().map(|&value|  value.to_owned()).collect();
+        let msg = Message::OpponentList(list);
+        let m = serde_json::to_vec(&msg).unwrap();
+        let clien_socket = self.clients.get(client).unwrap();
+        self.socket.send_to(&m, SocketAddr::from_str(&clien_socket).expect("Cant send data to all clients.")).unwrap();
+    }
     fn send_to_all_clients(&self, msg: Message) {
         let m = serde_json::to_vec(&msg).unwrap();
         for client in &self.clients {

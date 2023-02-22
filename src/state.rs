@@ -19,7 +19,7 @@ use ggez::{Context, GameError, GameResult};
 use std::sync::{mpsc, Arc};
 use throttle::Throttle;
 pub struct State {
-    game_struct: GameStruct,
+    // game_struct: GameStruct,
     pub view: View,
     pub server_ip: String,
     pub channels: (Sender<Message>, Receiver<Message>),
@@ -33,7 +33,7 @@ impl State {
             server_ip: String::new(),
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            game_struct: GameStruct::new(ctx, "".to_string()).expect("Cant create GameStruct object."),
+            // game_struct: GameStruct::new(ctx, "".to_string()).expect("Cant create GameStruct object."),
         })
     }
 }
@@ -41,9 +41,7 @@ impl State {
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
         if let View::Game(game)= &mut self.view{
-        // if let View::Game(game_data) = &mut self.view {
             if let Ok(msg) = self.channels.1.try_recv() {
-                // println!("MAIN THREAD: {:?}", msg);
                 match msg {
                     Message::ClientJoined(msg) => {
                         if msg.0 != game.player.name{
@@ -66,13 +64,14 @@ impl EventHandler for State {
                             }
                         }
                     }
+                    Message::OpponentList(list) =>{
+                        game.add_opponents(list)
+                    }
                 }
             }
 
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
                 if game.player.go_forward(&game.map.maze) {
-                    // self.counter += 1;
-                    // println!("server socket: {:?}", self.server_ip);
                     let client = self.client.as_ref().unwrap();
                     let m = prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
@@ -81,10 +80,6 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
                 if game.player.go_backward(&game.map.maze) {
-                    // self.client_socket.as_ref().unwrap().send_to(
-                    //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
-                    //     self.server_ip.clone(),
-                    // )?;
 
                     let client = self.client.as_ref().unwrap();
                     let m = prepare_player_data_to_send(&client.name, &game.player);
@@ -94,10 +89,6 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A)
             {
                 if game.player.turn_left() {
-                    // self.client_socket.as_ref().unwrap().send_to(
-                    //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
-                    //     self.server_ip.clone(),
-                    // )?;
 
                     let client = self.client.as_ref().unwrap();
                     let m = prepare_player_data_to_send(&client.name, &game.player);
@@ -108,10 +99,6 @@ impl EventHandler for State {
                 || ctx.keyboard.is_key_pressed(KeyCode::D)
             {
                 if game.player.turn_right() {
-                    // self.client_socket.as_ref().unwrap().send_to(
-                    //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
-                    //     self.server_ip.clone(),
-                    // )?;
 
                     let client = self.client.as_ref().unwrap();
                     let m = prepare_player_data_to_send(&client.name, &game.player);

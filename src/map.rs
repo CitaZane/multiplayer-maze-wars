@@ -127,17 +127,16 @@ impl Map {
         for player in opponents.iter(){
             let (x, y) = self.get_coordinates_for_pos(&player.pos);
             let rot = player.get_rotation();
-            let (x_comp, y_comp) = player.get_rotation_compensaion();
             let scale = 0.6;
             let size = self.player_arrow.height();
-            let x = x + size as f32 * scale * x_comp;
-            let y = y + size as f32 * scale * y_comp;
+            let x = x + size as f32 * scale;
+            let y = y + size as f32 * scale ;
 
             let point = Mesh::new_circle(ctx, DrawMode::fill(), [0., 0.], 5., 10., Color::RED).unwrap();
             canvas.draw(
                 &point,
                 DrawParam::default()
-                    .dest([x + 5., y + 5.])
+                    .dest([x -5., y -5.])
                     .scale([scale, scale])
                     .rotation(rot),
             );

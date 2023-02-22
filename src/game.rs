@@ -306,4 +306,13 @@ impl GameStruct {
         canvas.draw(&text, DrawParam::default());
         Ok(())
     }
+    pub fn add_opponents(&mut self, list:Vec<String>){
+        for player_name in list.iter(){
+            if player_name.to_owned() != self.player.name{
+
+                let opponent = Player::new(player_name.to_string());
+                self.opponents.push(opponent);
+            }
+        }
+    }
 }

@@ -51,6 +51,7 @@ impl Client {
                 Message::PlayerMoved(name, cor, dir) => {
                     // println!("Client: {:?}", &m)
                 }
+                _=>{}
             };
 
             send_ch.send(m).unwrap();
