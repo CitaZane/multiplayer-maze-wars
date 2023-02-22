@@ -33,33 +33,36 @@ impl State {
             server_ip: String::new(),
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            game_struct: GameStruct::new(ctx).expect("Cant create GameStruct object."),
+            game_struct: GameStruct::new(ctx, "".to_string()).expect("Cant create GameStruct object."),
         })
     }
 }
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        if let View::Game(game_data) = &mut self.view {
+        if let View::Game(game)= &mut self.view{
+        // if let View::Game(game_data) = &mut self.view {
             if let Ok(msg) = self.channels.1.try_recv() {
                 // println!("MAIN THREAD: {:?}", msg);
                 match msg {
                     Message::ClientJoined(msg) => {
-                        self.game_struct.opponents.push(Player {
-                            name: msg.0,
-                            pos: Vec2::new(1., 1.),
-                            dir: Direction::Right,
-                            camera_plane: Vec2 { x: 0.0, y: 0.65 },
-                            throttle: Throttle::new(Duration::from_millis(100), 1),
-                        });
+                        if msg.0 != game.player.name{
+                            println!("Add opponent {:?}- {:?}", msg.0, game.player.name);
+                            game.opponents.push(Player {
+                                name: msg.0,
+                                pos: Vec2::new(1., 1.),
+                                dir: Direction::Right,
+                                camera_plane: Vec2 { x: 0.0, y: 0.65 },
+                                throttle: Throttle::new(Duration::from_millis(100), 1),
+                            });
+                        }
                     }
                     Message::PlayerMoved(name, cor, dir) => {
-                        for opponent in self.game_struct.opponents.iter_mut() {
-                            if opponent.name == name {
+                        for opponent in game.opponents.iter_mut() {
+                            if opponent.name == name{
                                 opponent.pos.x = cor.0;
                                 opponent.pos.y = cor.1;
-                                // opponent.dir.vec().x = dir.0;
-                                // opponent.dir.vec().y = dir.1;
+                                opponent.dir = Direction::from_vec(&dir);
                             }
                         }
                     }
@@ -67,51 +70,51 @@ impl EventHandler for State {
             }
 
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
-                if game_data.player.go_forward(&game_data.map.maze) {
+                if game.player.go_forward(&game.map.maze) {
                     // self.counter += 1;
                     // println!("server socket: {:?}", self.server_ip);
                     let client = self.client.as_ref().unwrap();
-                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    let m = prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
-                if game_data.player.go_backward(&game_data.map.maze) {
+                if game.player.go_backward(&game.map.maze) {
                     // self.client_socket.as_ref().unwrap().send_to(
                     //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
                     //     self.server_ip.clone(),
                     // )?;
 
                     let client = self.client.as_ref().unwrap();
-                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    let m = prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A)
             {
-                if game_data.player.turn_left() {
+                if game.player.turn_left() {
                     // self.client_socket.as_ref().unwrap().send_to(
                     //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
                     //     self.server_ip.clone(),
                     // )?;
 
                     let client = self.client.as_ref().unwrap();
-                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    let m = prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Right)
                 || ctx.keyboard.is_key_pressed(KeyCode::D)
             {
-                if game_data.player.turn_right() {
+                if game.player.turn_right() {
                     // self.client_socket.as_ref().unwrap().send_to(
                     //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
                     //     self.server_ip.clone(),
                     // )?;
 
                     let client = self.client.as_ref().unwrap();
-                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    let m = prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
@@ -123,6 +126,7 @@ impl EventHandler for State {
                 ))
                 .expect("Cant disserialize.")
             }
+
         }
         Ok(())
     }

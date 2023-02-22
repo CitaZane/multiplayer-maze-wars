@@ -130,7 +130,8 @@ impl CreateGameStruct {
                 } else if name == "CREATE_GAME" {
                     match UdpSocket::bind(local_ip().unwrap().to_string() + ":35353") {
                         Ok(_) => {
-                            new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                            let player_name = self.name.contents();
+                            new_view = Some(View::Game(GameStruct::new(ctx, player_name).unwrap()));
                         }
                         Err(_) => {
                             self.display_error = true;

@@ -49,7 +49,7 @@ impl Client {
                 }
                 // Message::UpdateCounter(_num) => {}
                 Message::PlayerMoved(name, cor, dir) => {
-                    println!("Client: {:?}", &m)
+                    // println!("Client: {:?}", &m)
                 }
             };
 

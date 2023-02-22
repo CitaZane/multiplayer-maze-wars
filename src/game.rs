@@ -29,13 +29,11 @@ pub struct GameStruct {
 }
 // 17 x 33
 impl GameStruct {
-    pub fn new(ctx: &mut Context) -> GameResult<Self> {
-        // Load/create resources such as images here.
-        let opponent = Player::new();
+    pub fn new(ctx: &mut Context, player_name:String) -> GameResult<Self> {
         Ok(Self {
             map: Map::new(ctx),
-            player: Player::new(),
-            opponents: vec![opponent],
+            player: Player::new(player_name),
+            opponents: vec![],
             opponent_img: GameStruct::upload_opponet_images(ctx),
             players_last_pos: Vec2 { x: 0.0, y: 0.0 },
             players_last_dir: Direction::Up,
@@ -63,6 +61,8 @@ impl GameStruct {
         }
         self.draw_opponents(canvas, ctx)?;
         self.map.draw(canvas, &self.player)?;
+        // Helper for displaying opponents on map
+        self.map.draw_opponents(ctx,canvas, &self.opponents)?;
         self.draw_fps_counter(canvas, ctx)?;
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());

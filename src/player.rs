@@ -28,16 +28,25 @@ impl Direction {
             Direction::Right => Vec2 { x: 1., y: 0. },
         }
     }
+    pub fn from_vec(dir : &(f32, f32))->Direction{
+        match dir{
+            (0.,-1.) => Direction::Up,
+            (0., 1.) => Direction::Down,
+            (-1., 0.)=> Direction::Left,
+            (1., 0.) => Direction::Right,
+            _ => Direction::Up
+        }
+    }
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(name:String) -> Self {
         Self {
             pos: Vec2::new(1., 1.),
             dir: Direction::Right,
             camera_plane: Vec2 { x: 0.0, y: 0.65 },
             throttle: Throttle::new(Duration::from_millis(100), 1),
-            name: "".to_string(),
+            name,
         }
     }
     pub fn go_forward(&mut self, maze: &Vec<Vec<i32>>) -> bool{

@@ -148,7 +148,8 @@ impl JoinGameStruct {
                         self.ip_input_active = false;
                     }
                 } else if name == "JOIN_GAME" {
-                    new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                    let player_name = self.name.contents();
+                    new_view = Some(View::Game(GameStruct::new(ctx, player_name).unwrap()));
                     break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
