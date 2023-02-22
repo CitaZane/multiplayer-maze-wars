@@ -50,7 +50,6 @@ impl EventHandler for State {
                                 name: msg.0,
                                 pos: Vec2::new(1., 1.),
                                 dir: Direction::Right,
-                                camera_plane: Vec2 { x: 0.0, y: 0.65 },
                                 throttle: Throttle::new(Duration::from_millis(100), 1),
                             });
                         }

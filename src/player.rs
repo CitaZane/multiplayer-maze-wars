@@ -7,7 +7,6 @@ pub struct Player {
     pub name: String,
     pub pos: Vec2,
     pub dir: Direction,
-    pub camera_plane: Vec2,
     pub throttle: Throttle,
 }
 
@@ -44,7 +43,6 @@ impl Player {
         Self {
             pos: Vec2::new(1., 1.),
             dir: Direction::Right,
-            camera_plane: Vec2 { x: 0.0, y: 0.65 },
             throttle: Throttle::new(Duration::from_millis(100), 1),
             name,
         }
@@ -112,7 +110,6 @@ impl Player {
                 Direction::Left => Direction::Up,
                 Direction::Up => Direction::Right,
             };
-            self.configure_camera_plane();
             return true
         };
         return false
@@ -125,17 +122,17 @@ impl Player {
                 Direction::Left => Direction::Down,
                 Direction::Up => Direction::Left,
             };
-            self.configure_camera_plane();
             return true
         }
         return false
     }
-    fn configure_camera_plane(&mut self) {
-        self.camera_plane = match self.dir {
-            Direction::Right => Vec2 { x: 0.0, y: 0.65 },
-            Direction::Down => Vec2 { x: -0.65, y: 0. },
-            Direction::Left => Vec2 { x: 0.0, y: -0.65 },
-            Direction::Up => Vec2 { x: 0.65, y: 0.0 },
+    pub fn camera_plane(&self) -> Vec2{
+        const FOV:f32 = 0.65;
+        match self.dir {
+            Direction::Right => Vec2 { x: 0.0, y: FOV },
+            Direction::Down => Vec2 { x: -FOV, y: 0. },
+            Direction::Left => Vec2 { x: 0.0, y: -FOV },
+            Direction::Up => Vec2 { x: FOV, y: 0.0 },
         }
     }
     pub fn get_rotation(&self) -> f32 {

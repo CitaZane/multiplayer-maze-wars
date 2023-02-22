@@ -29,7 +29,7 @@ pub struct GameStruct {
 }
 // 17 x 33
 impl GameStruct {
-    pub fn new(ctx: &mut Context, player_name:String) -> GameResult<Self> {
+    pub fn new(ctx: &mut Context, player_name: String) -> GameResult<Self> {
         Ok(Self {
             map: Map::new(ctx),
             player: Player::new(player_name),
@@ -61,7 +61,7 @@ impl GameStruct {
         }
         self.map.draw(canvas, &self.player)?;
         // Helper for displaying opponents on map
-        self.map.draw_opponents(ctx,canvas, &self.opponents)?;
+        self.map.draw_opponents(ctx, canvas, &self.opponents)?;
         self.draw_fps_counter(canvas, ctx)?;
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
@@ -80,14 +80,12 @@ impl GameStruct {
             //translate sprite position to relative to camera
             let sprite_pos = self.opponents[i].pos - self.player.pos;
             //transform sprite with the inverse camera matrix
-            let inv_det = 1.0
-                / (self.player.camera_plane.x * player_dir.y
-                    - player_dir.x * self.player.camera_plane.y);
+            let camera_plane = self.player.camera_plane();
+            let inv_det = 1.0 / (camera_plane.x * player_dir.y - player_dir.x * camera_plane.y);
 
             let transform_x = inv_det * (player_dir.y * sprite_pos.x - player_dir.x * sprite_pos.y);
-            let transform_y = inv_det
-                * (-self.player.camera_plane.y * sprite_pos.x
-                    + self.player.camera_plane.x * sprite_pos.y); //depth
+            let transform_y =
+                inv_det * (-camera_plane.y * sprite_pos.x + camera_plane.x * sprite_pos.y); //depth
             let sprite_screen_x = (VIEWPORT_WIDTH as f32 / 2.0) * (1. + transform_x / transform_y);
 
             // calc the height of the sprite plane
@@ -131,8 +129,7 @@ impl GameStruct {
                               // calculate rays for ech pixel in horizontal direction
         for i in 0..VIEWPORT_WIDTH as i32 {
             let camera_x = (2 * i) as f32 / VIEWPORT_WIDTH as f32 - 1.0;
-            let ray_dir_x = self.player.dir.vec().x + self.player.camera_plane.x * camera_x;
-            let ray_dir_y = self.player.dir.vec().y + self.player.camera_plane.y * camera_x;
+            let ray_dir = self.player.dir.vec() + self.player.camera_plane() * camera_x;
 
             //which box of the map we're in
             let mut map_x = self.player.pos.x as i32;
@@ -143,8 +140,8 @@ impl GameStruct {
             let mut side_dist_y = 0.0;
 
             //length of ray from one x or y-side to next x or y-side
-            let delta_dist_x = (1. / ray_dir_x).abs();
-            let delta_dist_y = (1. / ray_dir_y).abs();
+            let delta_dist_x = (1. / ray_dir.x).abs();
+            let delta_dist_y = (1. / ray_dir.y).abs();
             let mut prep_wall_dist = 0.0;
 
             let mut step_x = 0;
@@ -155,16 +152,29 @@ impl GameStruct {
             let mut edge = false;
 
             //calculate step and initial sideDist
-            let player_x = self.player.pos.x + 0.5; //center player in square
-            let player_y = self.player.pos.y + 0.5; //center player in square
-            if ray_dir_x < 0.0 {
+            // place player on the edge of he square
+            let player_x = if self.player.dir == Direction::Left {
+                self.player.pos.x + 1.
+            } else if self.player.dir == Direction::Right {
+                self.player.pos.x
+            } else {
+                self.player.pos.x + 0.5
+            };
+            let player_y = if self.player.dir == Direction::Up {
+                self.player.pos.y + 1.
+            } else if self.player.dir == Direction::Down {
+                self.player.pos.y
+            } else {
+                self.player.pos.y + 0.5
+            };
+            if ray_dir.x < 0.0 {
                 step_x = -1;
                 side_dist_x = (player_x - map_x as f32) * delta_dist_x;
             } else {
                 step_x = 1;
                 side_dist_x = (map_x as f32 + 1.0 - player_x) * delta_dist_x;
             }
-            if ray_dir_y < 0.0 {
+            if ray_dir.y < 0.0 {
                 step_y = -1;
                 side_dist_y = (player_y - map_y as f32) * delta_dist_y;
             } else {
@@ -200,9 +210,9 @@ impl GameStruct {
                     }
                 }
             }
-
             //Calculate height of line to draw on screen
-            let line_height = VIEWPORT_HEIGHT / prep_wall_dist as f32;
+            let wall_height = VIEWPORT_HEIGHT * 0.8;
+            let line_height = wall_height / (prep_wall_dist as f32);
             let mut side_type = 1;
             if self.player.dir.vec().x == 0. {
                 side_type = 0
@@ -306,10 +316,9 @@ impl GameStruct {
         canvas.draw(&text, DrawParam::default());
         Ok(())
     }
-    pub fn add_opponents(&mut self, list:Vec<String>){
-        for player_name in list.iter(){
-            if player_name.to_owned() != self.player.name{
-
+    pub fn add_opponents(&mut self, list: Vec<String>) {
+        for player_name in list.iter() {
+            if player_name.to_owned() != self.player.name {
                 let opponent = Player::new(player_name.to_string());
                 self.opponents.push(opponent);
             }
