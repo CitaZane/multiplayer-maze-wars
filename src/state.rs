@@ -16,27 +16,23 @@ use ggez::glam::Vec2;
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc};
 use throttle::Throttle;
 pub struct State {
     game_struct: GameStruct,
-    pub client_name: String,
     pub view: View,
-    pub client_socket: Option<UdpSocket>,
     pub server_ip: String,
-    pub counter: usize,
     pub channels: (Sender<Message>, Receiver<Message>),
+    pub client: Option<Arc<Client>>,
 }
 
 impl State {
     pub fn new(ctx: &mut Context) -> GameResult<State> {
         Ok(State {
             channels: mpsc::channel(),
-            counter: 0,
             server_ip: String::new(),
-            client_socket: None,
+            client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            client_name: "".to_string(),
             game_struct: GameStruct::new(ctx).expect("Cant create GameStruct object."),
         })
     }
@@ -74,39 +70,49 @@ impl EventHandler for State {
                 if game_data.player.go_forward(&game_data.map.maze) {
                     // self.counter += 1;
                     // println!("server socket: {:?}", self.server_ip);
-                    let m = prepare_player_data_to_send(&self.client_name, &game_data.player);
-                    self.client_socket
-                        .as_ref()
-                        .unwrap()
-                        .send_to(&m, self.server_ip.clone())?;
+                    let client = self.client.as_ref().unwrap();
+                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
                 if game_data.player.go_backward(&game_data.map.maze) {
-                    self.client_socket.as_ref().unwrap().send_to(
-                        &prepare_player_data_to_send(&self.client_name, &game_data.player),
-                        self.server_ip.clone(),
-                    )?;
+                    // self.client_socket.as_ref().unwrap().send_to(
+                    //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
+                    //     self.server_ip.clone(),
+                    // )?;
+
+                    let client = self.client.as_ref().unwrap();
+                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A)
             {
                 if game_data.player.turn_left() {
-                    self.client_socket.as_ref().unwrap().send_to(
-                        &prepare_player_data_to_send(&self.client_name, &game_data.player),
-                        self.server_ip.clone(),
-                    )?;
+                    // self.client_socket.as_ref().unwrap().send_to(
+                    //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
+                    //     self.server_ip.clone(),
+                    // )?;
+
+                    let client = self.client.as_ref().unwrap();
+                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Right)
                 || ctx.keyboard.is_key_pressed(KeyCode::D)
             {
                 if game_data.player.turn_right() {
-                    self.client_socket.as_ref().unwrap().send_to(
-                        &prepare_player_data_to_send(&self.client_name, &game_data.player),
-                        self.server_ip.clone(),
-                    )?;
+                    // self.client_socket.as_ref().unwrap().send_to(
+                    //     &prepare_player_data_to_send(&self.client_name, &game_data.player),
+                    //     self.server_ip.clone(),
+                    // )?;
+
+                    let client = self.client.as_ref().unwrap();
+                    let m = prepare_player_data_to_send(&client.name, &game_data.player);
+                    client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
             fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
@@ -158,36 +164,36 @@ impl EventHandler for State {
                     match previous_view {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
-                            self.client_name = view_data.name.contents();
-
                             let server_ip = view_data.ip_address.contents() + ":35353";
+
+                            let client = Arc::new(Client::new(name));
+                            let client_clone = Arc::clone(&client);
                             let send_ch = self.channels.0.clone();
-                            let client = Client::new(send_ch, name);
-                            self.client_socket = Some(client.socket.try_clone().unwrap());
+
+                            self.client = Some(client.clone());
                             self.server_ip = server_ip.to_string();
-                            thread::spawn(move || client.listen_for_messages(server_ip));
+                            thread::spawn(move || {
+                                client_clone.listen_for_messages(server_ip, send_ch)
+                            });
                         }
                         View::CreateGame(view_data) => {
                             let name = view_data.name.contents();
-                            self.client_name = view_data.name.contents();
                             let send_ch = self.channels.0.clone();
 
                             // create client
-                            let client = Client::new(send_ch, name);
+                            let client = Arc::new(Client::new(name));
+                            let client_clone = Arc::clone(&client);
+                            self.client = Some(client.clone());
 
                             let mut server = Server::new();
                             let server_ip =
                                 server.socket.try_clone().unwrap().local_addr().unwrap();
 
-                            self.client_socket = Some(client.socket.try_clone().unwrap());
                             self.server_ip = server_ip.to_string();
-                            server
-                                .clients
-                                .insert(self.client_name.clone(), self.server_ip.clone());
 
                             thread::spawn(move || server.start().unwrap());
                             thread::spawn(move || {
-                                client.listen_for_messages(server_ip.to_string())
+                                client_clone.listen_for_messages(server_ip.to_string(), send_ch)
                             });
                         }
                         View::Game(_) => {}

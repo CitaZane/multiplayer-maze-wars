@@ -10,9 +10,8 @@ use std::{
 #[derive(Serialize, Deserialize, Debug)]
 
 pub enum Message {
-    ClientJoined((String, String)),                // Name, ip-address
-    // UpdateCounter(usize),
-    PlayerMoved(String, (f32, f32), (f32, f32)),   // Name, Coordinates(x,y), Direction (x, y) 
+    ClientJoined((String, String)),              // Name, ip-address
+    PlayerMoved(String, (f32, f32), (f32, f32)), // Name, Coordinates(x,y), Direction (x, y)
 }
 pub struct Server {
     pub socket: UdpSocket,
@@ -42,19 +41,24 @@ impl Server {
             match &m {
                 Message::ClientJoined((name, ip_address)) => {
                     self.clients.insert(name.clone(), ip_address.clone());
-                    send_to_all_clients(self, m);
-                },
-                Message::PlayerMoved(_, _, _) => {
-                    send_to_all_clients(self, m);
-                },
-            };
-            fn send_to_all_clients(server: &mut Server, msg: Message){
-                let m = serde_json::to_vec(&msg).unwrap();
-                for client in &server.clients {
-                    server.socket
-                        .send_to(&m, SocketAddr::from_str(client.1).expect("Cant send data to all clients."));
+                    self.send_to_all_clients(m);
                 }
-            }
+                Message::PlayerMoved(_, _, _) => {
+                    self.send_to_all_clients(m);
+                }
+            };
+        }
+    }
+
+    fn send_to_all_clients(&self, msg: Message) {
+        let m = serde_json::to_vec(&msg).unwrap();
+        for client in &self.clients {
+            self.socket
+                .send_to(
+                    &m,
+                    SocketAddr::from_str(client.1).expect("Cant send data to all clients."),
+                )
+                .unwrap();
         }
     }
 }

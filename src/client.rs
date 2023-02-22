@@ -7,22 +7,21 @@ use std::{
 use local_ip_address::local_ip;
 
 use crate::server::Message;
+
 pub struct Client {
     pub socket: UdpSocket,
-    pub send_ch: Sender<Message>,
     pub name: String,
 }
 
 impl Client {
-    pub fn new(send_ch: Sender<Message>, name: String) -> Client {
+    pub fn new(name: String) -> Client {
         let my_local_ip = local_ip().unwrap();
         Client {
             socket: UdpSocket::bind(my_local_ip.to_string() + ":0").unwrap(),
-            send_ch,
             name,
         }
     }
-    pub fn listen_for_messages(&self, server_ip_address: String) {
+    pub fn listen_for_messages(&self, server_ip_address: String, send_ch: Sender<Message>) {
         let message = Message::ClientJoined((
             self.name.clone(),
             self.socket.local_addr().unwrap().to_string(),
@@ -41,7 +40,8 @@ impl Client {
                 .socket
                 .recv_from(&mut buf)
                 .expect("Didnt receive any data");
-            let m: Message = serde_json::from_slice(&buf[..amt]).expect("Cant serialize from slice.");
+            let m: Message =
+                serde_json::from_slice(&buf[..amt]).expect("Cant serialize from slice.");
 
             match &m {
                 Message::ClientJoined((name, ip_address)) => {
@@ -50,10 +50,10 @@ impl Client {
                 // Message::UpdateCounter(_num) => {}
                 Message::PlayerMoved(name, cor, dir) => {
                     println!("Client: {:?}", &m)
-                },
+                }
             };
 
-            self.send_ch.send(m).unwrap();
+            send_ch.send(m).unwrap();
 
             // let echo = std::str::from_utf8(&buf[..amt]).unwrap();
             // println!("CLIENT: {:?}", d);
