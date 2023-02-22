@@ -1,5 +1,6 @@
 use local_ip_address::local_ip;
 use std::collections::HashMap;
+use std::net::UdpSocket;
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -108,7 +109,14 @@ impl CreateGameStruct {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
-                    new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                    match portpicker::is_free(35353) {
+                        true => {
+                            new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
+                        },
+                        false => {
+                            println!("port in use");
+                        },
+                    }
                     break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
