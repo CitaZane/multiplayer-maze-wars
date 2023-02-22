@@ -128,7 +128,7 @@ impl CreateGameStruct {
                 if name == "NAME_INPUT" {
                     self.name_input_active = true;
                 } else if name == "CREATE_GAME" {
-                    match UdpSocket::bind("192.168.1.126:35353") {
+                    match UdpSocket::bind(local_ip().unwrap().to_string() + ":35353") {
                         Ok(_) => {
                             new_view = Some(View::Game(GameStruct::new(ctx).unwrap()));
                         }
