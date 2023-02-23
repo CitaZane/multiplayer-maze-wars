@@ -28,12 +28,15 @@ pub struct GameStruct {
     players_last_dir: Direction,
     scene: MeshBuilder,
     buffer: Vec<f32>,
+    score_list: (Text, Text),
 }
 // 17 x 33
 impl GameStruct {
     pub fn new(ctx: &mut Context, player_name: String) -> GameResult<Self> {
+        let map = Map::new(ctx);
+        let score_list = GameStruct::create_player_list(&player_name);
         Ok(Self {
-            map: Map::new(ctx),
+            map,
             player: Player::new(player_name),
             opponents: vec![],
             opponent_img: GameStruct::upload_opponet_images(ctx),
@@ -41,7 +44,34 @@ impl GameStruct {
             players_last_dir: Direction::Up,
             scene: MeshBuilder::new(),
             buffer: vec![],
+            score_list,
         })
+    }
+    fn create_player_list(player_name: &String) -> (Text, Text) {
+        let name = TextFragment::new(format!("{:11}", player_name)).color(Color::BLACK);
+        let mut text_names = Text::new(name);
+
+        let score = TextFragment::new(format!("{:5}", 0)).color(Color::BLACK);
+        let mut text_scores = Text::new(score);
+
+        // names
+        text_names.set_font("LiberationMono-Regular");
+        text_names.set_scale(PxScale::from(18.0));
+        text_names.set_bounds([18.0 * 11., 200.0]);
+        text_names.set_wrap(true);
+        text_names.set_layout(TextLayout {
+            v_align: TextAlign::Begin,
+            h_align: TextAlign::Begin,
+        });
+        text_scores.set_font("LiberationMono-Regular");
+        text_scores.set_scale(PxScale::from(18.0));
+        text_scores.set_bounds([18.0 * 5., 200.0]);
+        text_scores.set_wrap(true);
+        text_scores.set_layout(TextLayout {
+            v_align: TextAlign::Begin,
+            h_align: TextAlign::End,
+        });
+        (text_names, text_scores)
     }
     fn upload_opponet_images(ctx: &mut Context) -> HashMap<Direction, Image> {
         let mut images = HashMap::new();
@@ -93,7 +123,7 @@ impl GameStruct {
 
             // calc the height of the sprite plane
             let h = 150.0;
-            let sprite_height = (VIEWPORT_HEIGHT*0.8 as f32 / transform_y).abs() as f32;
+            let sprite_height = (VIEWPORT_HEIGHT * 0.8 as f32 / transform_y).abs() as f32;
             let sprite_y_start = -sprite_height / 2.0 + VIEWPORT_HEIGHT as f32 / 2.0;
             let sprite_y_end = sprite_height / 2. + VIEWPORT_HEIGHT / 2.0;
 
@@ -102,7 +132,7 @@ impl GameStruct {
 
             let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT * 0.8;
             let x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
-            let y = sprite_y_end as f32 + y_offset - scaled_size* 1.1;
+            let y = sprite_y_end as f32 + y_offset - scaled_size * 1.1;
             if transform_y >= 0.0
                 && sprite_x_start > 0.0
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
@@ -326,43 +356,62 @@ impl GameStruct {
                 self.opponents.push(opponent);
             }
         }
-    }
-    fn draw_opponent_list(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        let (x,y, len) = self.map.get_map_corner_and_len();
-
-        let name = TextFragment::new(format!("{:11}", self.player.name) ).color(Color::BLACK);
-        let mut text_names = Text::new(name);
-
-        let score = TextFragment::new(format!("{:5}", self.player.score)).color(Color::BLACK);
-        let mut text_scores = Text::new(score);
-
-        for i in 0..self.opponents.len(){
-            let name = TextFragment::new(format!("{:11}", self.opponents[i].name)).color(Color::BLACK);
-            let score = TextFragment::new(format!("{:5}", self.opponents[i].score)).color(Color::BLACK);
-            text_names.add(name);
-            text_scores.add(score);
+        // opponents in  score_list
+        for player_name in list.iter() {
+            if player_name.to_owned() != self.player.name {
+                self.score_list
+                    .0
+                    .add(TextFragment::new(format!("{:11}", player_name)).color(Color::BLACK));
+                self.score_list
+                    .1
+                    .add(TextFragment::new(format!("{:5}", 0)).color(Color::BLACK));
+            };
         }
-        // names
-        text_names.set_font("LiberationMono-Regular");
-        text_names.set_scale(PxScale::from(18.0));
-        text_names.set_bounds([18.0 * 11., 200.0]);
-        text_names.set_wrap(true);
-        text_names.set_layout(TextLayout{
-            v_align:TextAlign::Begin,
-            h_align:TextAlign::Begin,
-        });
-        canvas.draw(&text_names, DrawParam::default().dest([x,y + 20.]));
+    }
+    fn draw_opponent_list(
+        &mut self,
+        canvas: &mut graphics::Canvas,
+        ctx: &mut Context,
+    ) -> GameResult {
+        let (x, y, len) = self.map.get_map_corner_and_len();
 
-        text_scores.set_font("LiberationMono-Regular");
-        text_scores.set_scale(PxScale::from(18.0));
-        text_scores.set_bounds([18.0 * 5., 200.0]);
-        text_scores.set_wrap(true);
-        text_scores.set_layout(TextLayout{
-            v_align:TextAlign::Begin,
-            h_align:TextAlign::End,
-        });
-        canvas.draw(&text_scores, DrawParam::default().dest([x+ len,y+ 20.]));
+        canvas.draw(&self.score_list.0, DrawParam::default().dest([x, y + 20.]));
+        canvas.draw(
+            &self.score_list.1,
+            DrawParam::default().dest([x + len, y + 20.]),
+        );
+        // let name = TextFragment::new(format!("{:11}", self.player.name) ).color(Color::BLACK);
+        // let mut text_names = Text::new(name);
+
+        // let score = TextFragment::new(format!("{:5}", self.player.score)).color(Color::BLACK);
+        // let mut text_scores = Text::new(score);
+
+        // for i in 0..self.opponents.len(){
+        //     let name = TextFragment::new(format!("{:11}", self.opponents[i].name)).color(Color::BLACK);
+        //     let score = TextFragment::new(format!("{:5}", self.opponents[i].score)).color(Color::BLACK);
+        //     text_names.add(name);
+        //     text_scores.add(score);
+        // }
+        // // names
+        // text_names.set_font("LiberationMono-Regular");
+        // text_names.set_scale(PxScale::from(18.0));
+        // text_names.set_bounds([18.0 * 11., 200.0]);
+        // text_names.set_wrap(true);
+        // text_names.set_layout(TextLayout{
+        //     v_align:TextAlign::Begin,
+        //     h_align:TextAlign::Begin,
+        // });
+        // canvas.draw(&text_names, DrawParam::default().dest([x,y + 20.]));
+
+        // text_scores.set_font("LiberationMono-Regular");
+        // text_scores.set_scale(PxScale::from(18.0));
+        // text_scores.set_bounds([18.0 * 5., 200.0]);
+        // text_scores.set_wrap(true);
+        // text_scores.set_layout(TextLayout{
+        //     v_align:TextAlign::Begin,
+        //     h_align:TextAlign::End,
+        // });
+        // canvas.draw(&text_scores, DrawParam::default().dest([x+ len,y+ 20.]));
         Ok(())
     }
-
 }

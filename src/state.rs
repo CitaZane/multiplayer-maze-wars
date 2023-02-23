@@ -45,13 +45,7 @@ impl EventHandler for State {
                 match msg {
                     Message::ClientJoined(msg) => {
                         if msg.0 != game.player.name{
-                            game.opponents.push(Player {
-                                name: msg.0,
-                                pos: Vec2::new(1., 1.),
-                                dir: Direction::Right,
-                                throttle: Throttle::new(Duration::from_millis(100), 1),
-                                score: 0,
-                            });
+                            game.add_opponents(vec![msg.0]);
                         }
                     }
                     Message::PlayerMoved(name, cor, dir) => {
