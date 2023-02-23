@@ -8,6 +8,7 @@ pub struct Player {
     pub pos: Vec2,
     pub dir: Direction,
     pub throttle: Throttle,
+    pub score: i32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -45,7 +46,14 @@ impl Player {
             dir: Direction::Right,
             throttle: Throttle::new(Duration::from_millis(100), 1),
             name,
+            score:0,
         }
+    }
+    pub fn got_shot(&mut self){
+        self.score -= 5
+    }
+    pub fn shot_opponent(&mut self){
+        self.score +=10
     }
     pub fn go_forward(&mut self, maze: &Vec<Vec<i32>>) -> bool{
         return self.go(maze, self.dir.clone());

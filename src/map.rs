@@ -98,7 +98,12 @@ impl Map {
         let y = V_OFFSET + pos.y as f32 * TILE_SIZE;
         (x, y)
     }
-
+    pub fn get_map_corner_and_len(&self)->(f32, f32, f32){
+        let x = H_OFFSET;
+        let y = V_OFFSET + TILE_SIZE * self.maze.len() as f32;
+        let len = TILE_SIZE * self.maze[0].len() as f32;
+        (x,y, len)
+    }
     fn register_graphics(maze: &Vec<Vec<i32>>, ctx: &mut Context) -> Mesh {
         let mut mesh_builder = MeshBuilder::new();
 

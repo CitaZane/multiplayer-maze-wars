@@ -8,6 +8,8 @@ use crate::VIEWPORT_HEIGHT;
 use crate::VIEWPORT_WIDTH;
 use ggez::glam::Vec2;
 use ggez::graphics::Image;
+use ggez::graphics::TextAlign;
+use ggez::graphics::TextLayout;
 use ggez::graphics::{
     self, Color, DrawMode, DrawParam, Mesh, MeshBuilder, PxScale, Text, TextFragment,
 };
@@ -62,6 +64,7 @@ impl GameStruct {
         self.map.draw(canvas, &self.player)?;
         // Helper for displaying opponents on map
         self.map.draw_opponents(ctx, canvas, &self.opponents)?;
+        self.draw_opponent_list(canvas, ctx)?;
         self.draw_fps_counter(canvas, ctx)?;
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
@@ -324,4 +327,42 @@ impl GameStruct {
             }
         }
     }
+    fn draw_opponent_list(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+        let (x,y, len) = self.map.get_map_corner_and_len();
+
+        let name = TextFragment::new(format!("{:11}", self.player.name) ).color(Color::BLACK);
+        let mut text_names = Text::new(name);
+
+        let score = TextFragment::new(format!("{:5}", self.player.score)).color(Color::BLACK);
+        let mut text_scores = Text::new(score);
+
+        for i in 0..self.opponents.len(){
+            let name = TextFragment::new(format!("{:11}", self.opponents[i].name)).color(Color::BLACK);
+            let score = TextFragment::new(format!("{:5}", self.opponents[i].score)).color(Color::BLACK);
+            text_names.add(name);
+            text_scores.add(score);
+        }
+        // names
+        text_names.set_font("LiberationMono-Regular");
+        text_names.set_scale(PxScale::from(18.0));
+        text_names.set_bounds([18.0 * 11., 200.0]);
+        text_names.set_wrap(true);
+        text_names.set_layout(TextLayout{
+            v_align:TextAlign::Begin,
+            h_align:TextAlign::Begin,
+        });
+        canvas.draw(&text_names, DrawParam::default().dest([x,y + 20.]));
+
+        text_scores.set_font("LiberationMono-Regular");
+        text_scores.set_scale(PxScale::from(18.0));
+        text_scores.set_bounds([18.0 * 5., 200.0]);
+        text_scores.set_wrap(true);
+        text_scores.set_layout(TextLayout{
+            v_align:TextAlign::Begin,
+            h_align:TextAlign::End,
+        });
+        canvas.draw(&text_scores, DrawParam::default().dest([x+ len,y+ 20.]));
+        Ok(())
+    }
+
 }
