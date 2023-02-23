@@ -29,6 +29,7 @@ pub struct GameStruct {
     scene: MeshBuilder,
     buffer: Vec<f32>,
     score_list: (Text, Text),
+    focus:Option<usize> //some if opponent visible, holds index in opponet list
 }
 // 17 x 33
 impl GameStruct {
@@ -45,7 +46,45 @@ impl GameStruct {
             scene: MeshBuilder::new(),
             buffer: vec![],
             score_list,
+            focus:None,
         })
+    }
+    pub fn update(&mut self)->GameResult{
+        // Update scene
+        if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
+            self.trace_scene()?;
+        }
+        // update scores
+        for (i,score) in self.score_list.1.fragments_mut().iter_mut().enumerate(){
+            if i == 0 {
+                score.text = format!("{:5}",self.player.score)
+            }else{
+                score.text = format!("{:5}",self.opponents[i-1].score)
+            }
+        }
+        //update last position stats
+        self.players_last_pos = self.player.pos;
+        self.players_last_dir = self.player.dir.clone();
+        Ok(())
+    }
+    pub fn shoot(&mut self){
+        let mut  distance = 1.0;
+        let maze= &self.map.maze;
+        let direction= self.player.dir.vec();
+        loop{
+            let square = self.player.pos + direction * distance;
+            if maze[square.y as usize][square.x as usize] == 0{
+                for opponent in self.opponents.iter_mut(){
+                    if opponent.pos == square{
+                        self.player.shot_opponent();
+                        opponent.got_shot(); //TEMPORARY ->should send data to server
+                    }
+                }
+            }else{
+                break
+            }
+            distance +=1.0
+        }
     }
     fn create_player_list(player_name: &String) -> (Text, Text) {
         let name = TextFragment::new(format!("{:11}", player_name)).color(Color::BLACK);
@@ -88,21 +127,18 @@ impl GameStruct {
         images
     }
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
-            self.trace_scene()?;
-        }
         self.map.draw(canvas, &self.player)?;
         // Helper for displaying opponents on map
         self.map.draw_opponents(ctx, canvas, &self.opponents)?;
-        self.draw_opponent_list(canvas, ctx)?;
+
         self.draw_fps_counter(canvas, ctx)?;
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
         canvas.draw(&mesh, DrawParam::default());
+        
         self.draw_opponents(canvas, ctx)?;
-        //update last position stats
-        self.players_last_pos = self.player.pos;
-        self.players_last_dir = self.player.dir.clone();
+        self.draw_opponent_list(canvas)?;
+
         Ok(())
     }
     fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
@@ -370,48 +406,14 @@ impl GameStruct {
     }
     fn draw_opponent_list(
         &mut self,
-        canvas: &mut graphics::Canvas,
-        ctx: &mut Context,
+        canvas: &mut graphics::Canvas
     ) -> GameResult {
         let (x, y, len) = self.map.get_map_corner_and_len();
-
         canvas.draw(&self.score_list.0, DrawParam::default().dest([x, y + 20.]));
         canvas.draw(
             &self.score_list.1,
             DrawParam::default().dest([x + len, y + 20.]),
         );
-        // let name = TextFragment::new(format!("{:11}", self.player.name) ).color(Color::BLACK);
-        // let mut text_names = Text::new(name);
-
-        // let score = TextFragment::new(format!("{:5}", self.player.score)).color(Color::BLACK);
-        // let mut text_scores = Text::new(score);
-
-        // for i in 0..self.opponents.len(){
-        //     let name = TextFragment::new(format!("{:11}", self.opponents[i].name)).color(Color::BLACK);
-        //     let score = TextFragment::new(format!("{:5}", self.opponents[i].score)).color(Color::BLACK);
-        //     text_names.add(name);
-        //     text_scores.add(score);
-        // }
-        // // names
-        // text_names.set_font("LiberationMono-Regular");
-        // text_names.set_scale(PxScale::from(18.0));
-        // text_names.set_bounds([18.0 * 11., 200.0]);
-        // text_names.set_wrap(true);
-        // text_names.set_layout(TextLayout{
-        //     v_align:TextAlign::Begin,
-        //     h_align:TextAlign::Begin,
-        // });
-        // canvas.draw(&text_names, DrawParam::default().dest([x,y + 20.]));
-
-        // text_scores.set_font("LiberationMono-Regular");
-        // text_scores.set_scale(PxScale::from(18.0));
-        // text_scores.set_bounds([18.0 * 5., 200.0]);
-        // text_scores.set_wrap(true);
-        // text_scores.set_layout(TextLayout{
-        //     v_align:TextAlign::Begin,
-        //     h_align:TextAlign::End,
-        // });
-        // canvas.draw(&text_scores, DrawParam::default().dest([x+ len,y+ 20.]));
         Ok(())
     }
 }

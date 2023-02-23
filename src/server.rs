@@ -37,7 +37,7 @@ impl Server {
         loop {
             let (amt, _src) = self.socket.recv_from(&mut buf)?;
             let m: Message = serde_json::from_slice(&buf[..amt]).unwrap();
-            println!("SERVER: {:?}", m);
+            // println!("SERVER: {:?}", m);
 
             match &m {
                 Message::ClientJoined((name, ip_address)) => {   

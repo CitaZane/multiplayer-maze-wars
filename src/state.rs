@@ -98,6 +98,12 @@ impl EventHandler for State {
                     client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
+            if ctx.keyboard.is_key_pressed(KeyCode::Space){
+                if game.player.throttle.accept().is_ok() {
+                    game.shoot()
+                }
+            }
+            game.update()?;
             fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
                 serde_json::to_vec(&Message::PlayerMoved(
                     player_name.clone(),
