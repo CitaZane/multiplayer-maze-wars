@@ -49,6 +49,22 @@ impl GameStruct {
             focus:None,
         })
     }
+    pub fn register_shooting(&mut self, shot_data:(String, String)){
+        let shooter = shot_data.0;
+        let target = shot_data.1;
+        if self.player.name == shooter{
+            self.player.shot_opponent()
+        }else if self.player.name == target{
+            self.player.got_shot()
+        }
+        for player in self.opponents.iter_mut(){
+            if player.name == shooter{
+                player.shot_opponent()
+            }else if player.name == target{
+                player.got_shot()
+            }
+        }
+    }
     pub fn update(&mut self)->GameResult{
         // Update scene
         if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
@@ -67,7 +83,7 @@ impl GameStruct {
         self.players_last_dir = self.player.dir.clone();
         Ok(())
     }
-    pub fn shoot(&mut self){
+    pub fn shoot(&mut self)->Option<(String,String)>{
         let mut  distance = 1.0;
         let maze= &self.map.maze;
         let direction= self.player.dir.vec();
@@ -76,12 +92,13 @@ impl GameStruct {
             if maze[square.y as usize][square.x as usize] == 0{
                 for opponent in self.opponents.iter_mut(){
                     if opponent.pos == square{
-                        self.player.shot_opponent();
-                        opponent.got_shot(); //TEMPORARY ->should send data to server
+                        // self.player.shot_opponent();
+                        // opponent.got_shot(); //TEMPORARY ->should send data to server
+                        return Some((self.player.name.clone(), opponent.name.clone()));
                     }
                 }
             }else{
-                break
+                return None
             }
             distance +=1.0
         }
