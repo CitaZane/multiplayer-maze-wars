@@ -34,7 +34,7 @@ pub struct GameStruct {
 }
 
 impl GameStruct {
-    pub fn new(ctx: &mut Context, player_name: String, map:Map) -> GameResult<Self> {
+    pub fn new(ctx: &mut Context, player_name: String, map: Map) -> GameResult<Self> {
         // let map = Map::new(ctx);
         let score_list = GameStruct::create_player_list(ctx, &player_name, &map);
         Ok(Self {
@@ -186,7 +186,7 @@ impl GameStruct {
     }
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
         self.map.draw(canvas)?;
-        self.map.draw_player_position(canvas,  &self.player)?;
+        self.map.draw_player_position(canvas, &self.player)?;
         // Helper for displaying opponents on map
         self.map.draw_opponents(ctx, canvas, &self.opponents)?;
 
@@ -204,7 +204,7 @@ impl GameStruct {
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
         let player_dir = self.player.dir.vec();
-        let mut visible_opponents : Vec<(&Image, DrawParam, f32)> = vec![];
+        let mut visible_opponents: Vec<(&Image, DrawParam, f32)> = vec![];
 
         for i in 0..self.opponents.len() {
             //translate sprite position to relative to camera
@@ -228,8 +228,11 @@ impl GameStruct {
             let sprite_x_end = sprite_height / 2.0 + sprite_screen_x as f32;
 
             let scaled_size = (sprite_y_end - sprite_y_start) * h / VIEWPORT_HEIGHT * 0.8;
-            let x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
+            let mut x = (sprite_x_start + sprite_x_end) / 2. as f32 + x_offset - scaled_size / 2.0;
             let y = sprite_y_end as f32 + y_offset - scaled_size * 1.1;
+            if x - x_offset > self.buffer.len() as f32 - 1. {
+                x = self.buffer.len() as f32 - 1. + x_offset
+            }
             if transform_y >= 0.0
                 && sprite_x_start > 0.0
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
@@ -239,14 +242,17 @@ impl GameStruct {
                 let player_dir = self.player.get_opponent_direction(&self.opponents[i].dir);
                 let player_img = &self.opponent_img[&player_dir];
                 let scale = scaled_size / player_img.height() as f32 * 1.2;
-                visible_opponents.push((player_img,DrawParam::default()
-                .dest([x - scaled_size * 0.15, y])
-                .scale([scale, scale]), scale))
+                visible_opponents.push((
+                    player_img,
+                    DrawParam::default()
+                        .dest([x - scaled_size * 0.15, y])
+                        .scale([scale, scale]),
+                    scale,
+                ))
             }
-            
         }
         visible_opponents.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap());
-        for opponent in visible_opponents.iter().rev(){
+        for opponent in visible_opponents.iter().rev() {
             canvas.draw(opponent.0, opponent.1)
         }
         Ok(())
@@ -470,10 +476,10 @@ impl GameStruct {
         let (x, y, len) = self.map.get_map_corner_and_len();
         // Draw background
         if self.closest_opponent.is_some() {
-            let i = self.closest_opponent.unwrap() as f32 ;
+            let i = self.closest_opponent.unwrap() as f32;
             canvas.draw(
                 &self.score_list.2,
-                DrawParam::default().dest([-5., i* 18.0 + 15.0]),
+                DrawParam::default().dest([-5., i * 18.0 + 15.0]),
             );
         }
         canvas.draw(&self.score_list.0, DrawParam::default().dest([x, y + 20.]));

@@ -4,7 +4,7 @@ use ggez::{
 };
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Error, Write};
+use std::io::{Error, Write};
 
 use crate::{
     drawer::{Button, Drawer, Input},
