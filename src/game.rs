@@ -185,7 +185,8 @@ impl GameStruct {
         images
     }
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
-        self.map.draw(canvas, &self.player)?;
+        self.map.draw(canvas)?;
+        self.map.draw_player_position(canvas,  &self.player)?;
         // Helper for displaying opponents on map
         self.map.draw_opponents(ctx, canvas, &self.opponents)?;
 

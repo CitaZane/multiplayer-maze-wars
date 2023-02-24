@@ -29,7 +29,6 @@ impl State {
             server_ip: String::new(),
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            // game_struct: GameStruct::new(ctx, "".to_string()).expect("Cant create GameStruct object."),
         })
     }
     fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
@@ -145,6 +144,10 @@ impl EventHandler for State {
                     new_view = view_data.check_mouse_click(x, y, ctx);
                 }
                 View::Game(_) => {}
+                View::CreateMap(view_data) => {
+                    view_data.register_click(x, y,ctx);
+                    new_view = view_data.check_mouse_click(x, y, ctx);
+                }
             };
 
             if let Some(view) = new_view {
@@ -189,6 +192,7 @@ impl EventHandler for State {
                         }
                         View::Game(_) => {}
                         View::MainMenu(_) => {}
+                        View::CreateMap(_) => {}
                     }
                 }
                 self.view = view;
@@ -202,6 +206,7 @@ impl EventHandler for State {
         match &mut self.view {
             View::Game(_) => {}
             View::MainMenu(_) => {}
+            View::CreateMap(_) => {}
             View::JoinGame(view_data) => {
                 if view_data.ip_input_active
                     && character.is_alphanumeric()
@@ -242,6 +247,7 @@ impl EventHandler for State {
                 match &mut self.view {
                     View::Game(_) => {}
                     View::MainMenu(_) => {}
+                    View::CreateMap(_) => {}
                     View::JoinGame(view_data) => {
                         if view_data.ip_input_active {
                             view_data.ip_address =
