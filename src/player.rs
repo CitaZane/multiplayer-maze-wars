@@ -80,7 +80,7 @@ impl Player {
                     }
                 }
                 Direction::Down => {
-                    if self.pos.x >= (maze.len() - 1) as f32 {
+                    if self.pos.y >= (maze.len() - 1) as f32 {
                         return false;
                     }
                     if maze[self.pos.y as usize + 1][self.pos.x as usize] == 0 {
