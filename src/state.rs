@@ -206,7 +206,14 @@ impl EventHandler for State {
         match &mut self.view {
             View::Game(_) => {}
             View::MainMenu(_) => {}
-            View::CreateMap(_) => {}
+            View::CreateMap(view_data) => {
+                if view_data.name_input_active
+                    && character.is_alphanumeric()
+                    && view_data.name.contents().len() <= 10
+                {
+                    view_data.name.add(character);
+                }
+            }
             View::JoinGame(view_data) => {
                 if view_data.ip_input_active
                     && character.is_alphanumeric()
@@ -247,7 +254,12 @@ impl EventHandler for State {
                 match &mut self.view {
                     View::Game(_) => {}
                     View::MainMenu(_) => {}
-                    View::CreateMap(_) => {}
+                    View::CreateMap(view_data) => {
+                        if view_data.name_input_active {
+                            view_data.name =
+                                remove_input_text_last_letter(view_data.name.contents());
+                        }
+                    }
                     View::JoinGame(view_data) => {
                         if view_data.ip_input_active {
                             view_data.ip_address =
