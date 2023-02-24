@@ -203,6 +203,8 @@ impl GameStruct {
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
         let player_dir = self.player.dir.vec();
+        let mut visible_opponents : Vec<(&Image, DrawParam, f32)> = vec![];
+
         for i in 0..self.opponents.len() {
             //translate sprite position to relative to camera
             let sprite_pos = self.opponents[i].pos - self.player.pos;
@@ -235,15 +237,16 @@ impl GameStruct {
                 // find correct direction
                 let player_dir = self.player.get_opponent_direction(&self.opponents[i].dir);
                 let player_img = &self.opponent_img[&player_dir];
-                // let player_img = graphics::Image::from_path(ctx, "/eye-front.png")?;
                 let scale = scaled_size / player_img.height() as f32 * 1.2;
-                canvas.draw(
-                    player_img,
-                    DrawParam::default()
-                        .dest([x - scaled_size * 0.15, y])
-                        .scale([scale, scale]),
-                );
+                visible_opponents.push((player_img,DrawParam::default()
+                .dest([x - scaled_size * 0.15, y])
+                .scale([scale, scale]), scale))
             }
+            
+        }
+        visible_opponents.sort_by(|a, b| b.2.partial_cmp(&a.2).unwrap());
+        for opponent in visible_opponents.iter().rev(){
+            canvas.draw(opponent.0, opponent.1)
         }
         Ok(())
     }
