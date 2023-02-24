@@ -69,7 +69,9 @@ impl EventHandler for State {
                     Message::PlayerShot(shot_data) => game.register_shooting(shot_data),
                 }
             }
-
+            if !ctx.keyboard.is_key_pressed(KeyCode::Space) {
+                game.player.can_shoot = true;
+            }
             if ctx.keyboard.is_key_pressed(KeyCode::Up) || ctx.keyboard.is_key_pressed(KeyCode::W) {
                 if game.player.go_forward(&game.map.maze) {
                     let client = self.client.as_ref().unwrap();
@@ -103,7 +105,7 @@ impl EventHandler for State {
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Space) {
-                if game.player.throttle.accept().is_ok() {
+                if game.player.can_shoot {                    
                     let shot = game.shoot();
                     if shot.is_some() {
                         let (shooter, target) = shot.unwrap();
@@ -111,7 +113,8 @@ impl EventHandler for State {
                         let m = State::prepare_shoot_data_to_send(shooter, target);
                         client.socket.send_to(&m, self.server_ip.clone())?;
                     }
-                }
+                    game.player.can_shoot = false;
+                }                
             }
             game.update()?;
         }

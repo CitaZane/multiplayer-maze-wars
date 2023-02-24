@@ -7,8 +7,9 @@ pub struct Player {
     pub name: String,
     pub pos: Vec2,
     pub dir: Direction,
-    pub throttle: Throttle,
+    pub moving_throttle: Throttle,
     pub score: i32,
+    pub can_shoot: bool
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -46,9 +47,10 @@ impl Player {
         Self {
             pos: Vec2::new(1., 1.),
             dir: Direction::Right,
-            throttle: Throttle::new(Duration::from_millis(100), 1),
+            moving_throttle: Throttle::new(Duration::from_millis(100), 1),
             name,
             score:0,
+            can_shoot: true,
         }
     }
     pub fn got_shot(&mut self){
@@ -70,7 +72,7 @@ impl Player {
         return self.go(maze, direction);
     }
     fn go(&mut self, maze: &Vec<Vec<i32>>, direction: Direction) -> bool {
-        if self.throttle.accept().is_ok() {
+        if self.moving_throttle.accept().is_ok() {
             match direction {
                 Direction::Right => {
                     if self.pos.x >= (maze[0].len() - 1) as f32 {
@@ -113,7 +115,7 @@ impl Player {
         return false
     }
     pub fn turn_right(&mut self) -> bool{
-        if self.throttle.accept().is_ok(){
+        if self.moving_throttle.accept().is_ok(){
             self.dir = match self.dir {
                 Direction::Right => Direction::Down,
                 Direction::Down => Direction::Left,
@@ -125,7 +127,7 @@ impl Player {
         return false
     }
     pub fn turn_left(&mut self) -> bool{
-        if self.throttle.accept().is_ok() {
+        if self.moving_throttle.accept().is_ok() {
             self.dir = match self.dir {
                 Direction::Right => Direction::Up,
                 Direction::Down => Direction::Right,
