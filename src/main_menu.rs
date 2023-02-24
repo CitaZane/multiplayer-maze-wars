@@ -7,7 +7,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer},
-    view::View, game::GameStruct,
+    view::View,
 };
 
 use super::{create_game::CreateGameStruct, join_game::JoinGameStruct};
@@ -66,8 +66,12 @@ impl MainMenuStruct {
             275.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
         )?;
-        self.drawer.draw_eye(canvas, ctx).expect("Cant draw eye picture.");
-        self.drawer.draw_fps_counter(canvas, ctx).expect("Cant draw fps counter.");
+        self.drawer
+            .draw_eye(canvas, ctx)
+            .expect("Cant draw eye picture.");
+        self.drawer
+            .draw_fps_counter(canvas, ctx)
+            .expect("Cant draw fps counter.");
         Ok(())
     }
 
@@ -87,12 +91,12 @@ impl MainMenuStruct {
                 if name == "CREATE_GAME" {
                     new_view = Some(View::CreateGame(CreateGameStruct::new(ctx).unwrap()));
                 } else if name == "JOIN_GAME" {
-
-                    new_view = Some(View::JoinGame(JoinGameStruct::new(ctx).unwrap())); // Normal MODE!
+                    new_view = Some(View::JoinGame(JoinGameStruct::new(ctx).unwrap()));
+                    // Normal MODE!
 
                     // new_view = Some(View::Game(GameStruct::new(ctx).unwrap())); // Dev Option !
                     // break;                                                      // For fast boot!
-                                                                                // Comment in for normal work!
+                    // Comment in for normal work!
                 }
             }
         }

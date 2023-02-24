@@ -29,12 +29,14 @@ impl Direction {
         }
     }
     pub fn from_vec(dir : &(f32, f32))->Direction{
-        match dir{
-            (0.,-1.) => Direction::Up,
-            (0., 1.) => Direction::Down,
-            (-1., 0.)=> Direction::Left,
-            (1., 0.) => Direction::Right,
-            _ => Direction::Up
+        if dir.0 == 0.0 && dir.1 == -1.0{
+            return Direction::Up;
+        }else if dir.0 == 0.0 && dir.1 == 1.0{
+            return Direction::Down;
+        }else if dir.0 == -1.0 && dir.1 == 0.0{
+            return Direction::Left;
+        }else{
+            return Direction::Right;
         }
     }
 }

@@ -29,7 +29,6 @@ pub struct GameStruct {
     scene: MeshBuilder,
     buffer: Vec<f32>,
     score_list: (Text, Text),
-    focus:Option<usize> //some if opponent visible, holds index in opponet list
 }
 // 17 x 33
 impl GameStruct {
@@ -46,36 +45,35 @@ impl GameStruct {
             scene: MeshBuilder::new(),
             buffer: vec![],
             score_list,
-            focus:None,
         })
     }
-    pub fn register_shooting(&mut self, shot_data:(String, String)){
+    pub fn register_shooting(&mut self, shot_data: (String, String)) {
         let shooter = shot_data.0;
         let target = shot_data.1;
-        if self.player.name == shooter{
+        if self.player.name == shooter {
             self.player.shot_opponent()
-        }else if self.player.name == target{
+        } else if self.player.name == target {
             self.player.got_shot()
         }
-        for player in self.opponents.iter_mut(){
-            if player.name == shooter{
+        for player in self.opponents.iter_mut() {
+            if player.name == shooter {
                 player.shot_opponent()
-            }else if player.name == target{
+            } else if player.name == target {
                 player.got_shot()
             }
         }
     }
-    pub fn update(&mut self)->GameResult{
+    pub fn update(&mut self) -> GameResult {
         // Update scene
         if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
             self.trace_scene()?;
         }
         // update scores
-        for (i,score) in self.score_list.1.fragments_mut().iter_mut().enumerate(){
+        for (i, score) in self.score_list.1.fragments_mut().iter_mut().enumerate() {
             if i == 0 {
-                score.text = format!("{:5}",self.player.score)
-            }else{
-                score.text = format!("{:5}",self.opponents[i-1].score)
+                score.text = format!("{:5}", self.player.score)
+            } else {
+                score.text = format!("{:5}", self.opponents[i - 1].score)
             }
         }
         //update last position stats
@@ -83,24 +81,22 @@ impl GameStruct {
         self.players_last_dir = self.player.dir.clone();
         Ok(())
     }
-    pub fn shoot(&mut self)->Option<(String,String)>{
-        let mut  distance = 1.0;
-        let maze= &self.map.maze;
-        let direction= self.player.dir.vec();
-        loop{
+    pub fn shoot(&mut self) -> Option<(String, String)> {
+        let mut distance = 1.0;
+        let maze = &self.map.maze;
+        let direction = self.player.dir.vec();
+        loop {
             let square = self.player.pos + direction * distance;
-            if maze[square.y as usize][square.x as usize] == 0{
-                for opponent in self.opponents.iter_mut(){
-                    if opponent.pos == square{
-                        // self.player.shot_opponent();
-                        // opponent.got_shot(); //TEMPORARY ->should send data to server
+            if maze[square.y as usize][square.x as usize] == 0 {
+                for opponent in self.opponents.iter_mut() {
+                    if opponent.pos == square {
                         return Some((self.player.name.clone(), opponent.name.clone()));
                     }
                 }
-            }else{
-                return None
+            } else {
+                return None;
             }
-            distance +=1.0
+            distance += 1.0
         }
     }
     fn create_player_list(player_name: &String) -> (Text, Text) {
@@ -152,13 +148,13 @@ impl GameStruct {
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
         canvas.draw(&mesh, DrawParam::default());
-        
-        self.draw_opponents(canvas, ctx)?;
+
+        self.draw_opponents(canvas)?;
         self.draw_opponent_list(canvas)?;
 
         Ok(())
     }
-    fn draw_opponents(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
+    fn draw_opponents(&mut self, canvas: &mut graphics::Canvas) -> GameResult {
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
         let player_dir = self.player.dir.vec();
@@ -222,16 +218,16 @@ impl GameStruct {
             let mut map_y = self.player.pos.y as i32;
 
             //length of ray from current position to next x or y-side
-            let mut side_dist_x = 0.0;
-            let mut side_dist_y = 0.0;
+            let mut side_dist_x;
+            let mut side_dist_y;
 
             //length of ray from one x or y-side to next x or y-side
             let delta_dist_x = (1. / ray_dir.x).abs();
             let delta_dist_y = (1. / ray_dir.y).abs();
             let mut prep_wall_dist = 0.0;
 
-            let mut step_x = 0;
-            let mut step_y = 0;
+            let step_x;
+            let step_y;
 
             let mut hit = 0;
             let mut side = 0;
@@ -421,10 +417,7 @@ impl GameStruct {
             };
         }
     }
-    fn draw_opponent_list(
-        &mut self,
-        canvas: &mut graphics::Canvas
-    ) -> GameResult {
+    fn draw_opponent_list(&mut self, canvas: &mut graphics::Canvas) -> GameResult {
         let (x, y, len) = self.map.get_map_corner_and_len();
         canvas.draw(&self.score_list.0, DrawParam::default().dest([x, y + 20.]));
         canvas.draw(

@@ -98,11 +98,11 @@ impl Map {
         let y = V_OFFSET + pos.y as f32 * TILE_SIZE;
         (x, y)
     }
-    pub fn get_map_corner_and_len(&self)->(f32, f32, f32){
+    pub fn get_map_corner_and_len(&self) -> (f32, f32, f32) {
         let x = H_OFFSET;
         let y = V_OFFSET + TILE_SIZE * self.maze.len() as f32;
         let len = TILE_SIZE * self.maze[0].len() as f32;
-        (x,y, len)
+        (x, y, len)
     }
     fn register_graphics(maze: &Vec<Vec<i32>>, ctx: &mut Context) -> Mesh {
         let mut mesh_builder = MeshBuilder::new();
@@ -128,20 +128,26 @@ impl Map {
         self.draw_player_position(canvas, player)?;
         Ok(())
     }
-    pub fn draw_opponents(&self,ctx:&mut Context, canvas: &mut graphics::Canvas, opponents: &Vec<Player>) -> GameResult {
-        for player in opponents.iter(){
+    pub fn draw_opponents(
+        &self,
+        ctx: &mut Context,
+        canvas: &mut graphics::Canvas,
+        opponents: &Vec<Player>,
+    ) -> GameResult {
+        for player in opponents.iter() {
             let (x, y) = self.get_coordinates_for_pos(&player.pos);
             let rot = player.get_rotation();
             let scale = 0.6;
             let size = self.player_arrow.height();
             let x = x + size as f32 * scale;
-            let y = y + size as f32 * scale ;
+            let y = y + size as f32 * scale;
 
-            let point = Mesh::new_circle(ctx, DrawMode::fill(), [0., 0.], 5., 10., Color::RED).unwrap();
+            let point =
+                Mesh::new_circle(ctx, DrawMode::fill(), [0., 0.], 5., 10., Color::RED).unwrap();
             canvas.draw(
                 &point,
                 DrawParam::default()
-                    .dest([x -5., y -5.])
+                    .dest([x - 5., y - 5.])
                     .scale([scale, scale])
                     .rotation(rot),
             );

@@ -1,10 +1,4 @@
-use std::{
-    collections::HashMap,
-    net::{IpAddr, Ipv4Addr, UdpSocket},
-    str::FromStr,
-    sync::mpsc::Sender,
-    thread,
-};
+use std::collections::HashMap;
 
 use ggez::{
     graphics::{self, Rect, Text},
@@ -13,8 +7,6 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer, Input},
-    server::{Message, Server},
-    state::State,
     view::View,
 };
 
@@ -128,7 +120,6 @@ impl JoinGameStruct {
         mouse_x: f32,
         mouse_y: f32,
         ctx: &mut Context,
-        send_ch: Sender<Message>,
     ) -> Option<View> {
         let mut new_view = None;
         for (name, elem_rect) in &self.element_rects {

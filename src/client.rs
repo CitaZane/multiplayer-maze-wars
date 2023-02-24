@@ -47,17 +47,13 @@ impl Client {
                 Message::ClientJoined((name, ip_address)) => {
                     println!("CLIENT: New user joined: {} {}", name, ip_address);
                 }
-                // Message::UpdateCounter(_num) => {}
-                Message::PlayerMoved(name, cor, dir) => {
-                    // println!("Client: {:?}", &m)
-                }
-                _=>{}
+                // Message::PlayerMoved(_name, _cor, _dir) => {
+                // println!("Client: {:?}", &m)
+                // }
+                _ => {}
             };
 
             send_ch.send(m).unwrap();
-
-            // let echo = std::str::from_utf8(&buf[..amt]).unwrap();
-            // println!("CLIENT: {:?}", d);
         }
     }
 }

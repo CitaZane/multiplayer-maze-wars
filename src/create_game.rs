@@ -1,13 +1,9 @@
 use ggez::graphics::{Color, DrawParam, TextAlign, TextLayout};
 use local_ip_address::local_ip;
 use std::collections::HashMap;
-use std::net::{TcpListener, UdpSocket};
-use std::sync::mpsc::Sender;
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::net::UdpSocket;
 
 use crate::drawer::{Button, Drawer, Input};
-use crate::server::{Message, Server};
 use crate::view::View;
 use ggez::{
     graphics::{self, Rect, Text},
@@ -118,7 +114,6 @@ impl CreateGameStruct {
         mouse_x: f32,
         mouse_y: f32,
         ctx: &mut Context,
-        send_ch: Sender<Message>,
     ) -> Option<View> {
         let mut new_view = None;
 

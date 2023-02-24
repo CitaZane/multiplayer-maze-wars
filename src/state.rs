@@ -1,10 +1,8 @@
-use std::net::UdpSocket;
 use std::sync::mpsc::{Receiver, Sender};
 use std::thread;
-use std::time::Duration;
 
 use crate::client::Client;
-use crate::game::GameStruct;
+
 use crate::main_menu::MainMenuStruct;
 pub use crate::map::Map;
 use crate::player::Direction;
@@ -12,12 +10,10 @@ pub use crate::player::Player;
 use crate::server::{Message, Server};
 use crate::view::{remove_input_text_last_letter, View};
 use ggez::event::{EventHandler, MouseButton};
-use ggez::glam::Vec2;
 use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
 use std::sync::{mpsc, Arc};
-use throttle::Throttle;
 pub struct State {
     // game_struct: GameStruct,
     pub view: View,
@@ -44,38 +40,33 @@ impl State {
         ))
         .expect("Cant disserialize.")
     }
-    fn prepare_shoot_data_to_send(player_name: String, opponent_name: String)-> Vec<u8> {
-        serde_json::to_vec(&Message::PlayerShot((player_name,opponent_name)
-            ))
-        .expect("Cant disserialize.")
+    fn prepare_shoot_data_to_send(player_name: String, opponent_name: String) -> Vec<u8> {
+        serde_json::to_vec(&Message::PlayerShot((player_name, opponent_name)))
+            .expect("Cant disserialize.")
     }
 }
 
 impl EventHandler for State {
     fn update(&mut self, ctx: &mut Context) -> GameResult {
-        if let View::Game(game)= &mut self.view{
+        if let View::Game(game) = &mut self.view {
             if let Ok(msg) = self.channels.1.try_recv() {
                 match msg {
                     Message::ClientJoined(msg) => {
-                        if msg.0 != game.player.name{
+                        if msg.0 != game.player.name {
                             game.add_opponents(vec![msg.0]);
                         }
                     }
                     Message::PlayerMoved(name, cor, dir) => {
                         for opponent in game.opponents.iter_mut() {
-                            if opponent.name == name{
+                            if opponent.name == name {
                                 opponent.pos.x = cor.0;
                                 opponent.pos.y = cor.1;
                                 opponent.dir = Direction::from_vec(&dir);
                             }
                         }
                     }
-                    Message::OpponentList(list) =>{
-                        game.add_opponents(list)
-                    }
-                    Message::PlayerShot(shot_data) => {
-                        game.register_shooting(shot_data)
-                    }
+                    Message::OpponentList(list) => game.add_opponents(list),
+                    Message::PlayerShot(shot_data) => game.register_shooting(shot_data),
                 }
             }
 
@@ -89,7 +80,6 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Down) || ctx.keyboard.is_key_pressed(KeyCode::S)
             {
                 if game.player.go_backward(&game.map.maze) {
-
                     let client = self.client.as_ref().unwrap();
                     let m = State::prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
@@ -98,7 +88,6 @@ impl EventHandler for State {
             if ctx.keyboard.is_key_pressed(KeyCode::Left) || ctx.keyboard.is_key_pressed(KeyCode::A)
             {
                 if game.player.turn_left() {
-
                     let client = self.client.as_ref().unwrap();
                     let m = State::prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
@@ -108,19 +97,18 @@ impl EventHandler for State {
                 || ctx.keyboard.is_key_pressed(KeyCode::D)
             {
                 if game.player.turn_right() {
-
                     let client = self.client.as_ref().unwrap();
                     let m = State::prepare_player_data_to_send(&client.name, &game.player);
                     client.socket.send_to(&m, self.server_ip.clone())?;
                 }
             }
-            if ctx.keyboard.is_key_pressed(KeyCode::Space){
+            if ctx.keyboard.is_key_pressed(KeyCode::Space) {
                 if game.player.throttle.accept().is_ok() {
                     let shot = game.shoot();
-                    if shot.is_some(){
+                    if shot.is_some() {
                         let (shooter, target) = shot.unwrap();
                         let client = self.client.as_ref().unwrap();
-                        let m = State::prepare_shoot_data_to_send(shooter,target);
+                        let m = State::prepare_shoot_data_to_send(shooter, target);
                         client.socket.send_to(&m, self.server_ip.clone())?;
                     }
                 }
@@ -150,11 +138,11 @@ impl EventHandler for State {
                 View::JoinGame(view_data) => {
                     view_data.ip_input_active = false;
                     view_data.name_input_active = false;
-                    new_view = view_data.check_mouse_click(x, y, ctx, self.channels.0.clone());
+                    new_view = view_data.check_mouse_click(x, y, ctx);
                 }
                 View::CreateGame(view_data) => {
                     view_data.name_input_active = false;
-                    new_view = view_data.check_mouse_click(x, y, ctx, self.channels.0.clone());
+                    new_view = view_data.check_mouse_click(x, y, ctx);
                 }
                 View::Game(_) => {}
             };
