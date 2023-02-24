@@ -8,6 +8,7 @@ use crate::VIEWPORT_HEIGHT;
 use crate::VIEWPORT_WIDTH;
 use ggez::glam::Vec2;
 use ggez::graphics::Image;
+use ggez::graphics::Rect;
 use ggez::graphics::TextAlign;
 use ggez::graphics::TextLayout;
 use ggez::graphics::{
@@ -19,7 +20,7 @@ const X: f32 = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
 const Y: f32 = 20.0;
 
 pub struct GameStruct {
-    pub map: Map,
+    pub map: Map, // 17 x 33
     pub player: Player,
     pub opponents: Vec<Player>,
 
@@ -28,13 +29,14 @@ pub struct GameStruct {
     players_last_dir: Direction,
     scene: MeshBuilder,
     buffer: Vec<f32>,
-    score_list: (Text, Text),
+    score_list: (Text, Text, Mesh),
+    closest_opponent: Option<usize>,
 }
-// 17 x 33
+
 impl GameStruct {
     pub fn new(ctx: &mut Context, player_name: String) -> GameResult<Self> {
         let map = Map::new(ctx);
-        let score_list = GameStruct::create_player_list(&player_name);
+        let score_list = GameStruct::create_player_list(ctx, &player_name, &map);
         Ok(Self {
             map,
             player: Player::new(player_name),
@@ -45,6 +47,7 @@ impl GameStruct {
             scene: MeshBuilder::new(),
             buffer: vec![],
             score_list,
+            closest_opponent: None,
         })
     }
     pub fn register_shooting(&mut self, shot_data: (String, String)) {
@@ -68,7 +71,15 @@ impl GameStruct {
         if self.players_last_pos != self.player.pos || self.player.dir != self.players_last_dir {
             self.trace_scene()?;
         }
-        // update scores
+        self.update_closest_opponent();
+        self.update_score_list();
+
+        //update last position stats
+        self.players_last_pos = self.player.pos;
+        self.players_last_dir = self.player.dir.clone();
+        Ok(())
+    }
+    fn update_score_list(&mut self) {
         for (i, score) in self.score_list.1.fragments_mut().iter_mut().enumerate() {
             if i == 0 {
                 score.text = format!("{:5}", self.player.score)
@@ -76,30 +87,56 @@ impl GameStruct {
                 score.text = format!("{:5}", self.opponents[i - 1].score)
             }
         }
-        //update last position stats
-        self.players_last_pos = self.player.pos;
-        self.players_last_dir = self.player.dir.clone();
-        Ok(())
+        let i_active = self.closest_opponent.unwrap_or(99);
+        //HIGLIGHT THE CLOSEST OPPONENT
+        for (i, score) in self.score_list.1.fragments_mut().iter_mut().enumerate() {
+            if i == i_active + 1 {
+                score.color = Some(Color::WHITE);
+            } else {
+                score.color = Some(Color::BLACK);
+            }
+        }
+        for (i, name) in self.score_list.0.fragments_mut().iter_mut().enumerate() {
+            if i == i_active + 1 {
+                name.color = Some(Color::WHITE);
+            } else {
+                name.color = Some(Color::BLACK);
+            }
+        }
     }
-    pub fn shoot(&mut self) -> Option<(String, String)> {
+
+    fn update_closest_opponent(&mut self) {
         let mut distance = 1.0;
         let maze = &self.map.maze;
         let direction = self.player.dir.vec();
         loop {
             let square = self.player.pos + direction * distance;
             if maze[square.y as usize][square.x as usize] == 0 {
-                for opponent in self.opponents.iter_mut() {
+                for (i, opponent) in self.opponents.iter().enumerate() {
                     if opponent.pos == square {
-                        return Some((self.player.name.clone(), opponent.name.clone()));
+                        self.closest_opponent = Some(i);
+                        return;
                     }
                 }
             } else {
-                return None;
+                self.closest_opponent = None;
+                return;
             }
             distance += 1.0
         }
     }
-    fn create_player_list(player_name: &String) -> (Text, Text) {
+    pub fn shoot(&mut self) -> Option<(String, String)> {
+        if self.closest_opponent.is_none() {
+            return None;
+        }
+        let i = self.closest_opponent.unwrap();
+        Some((self.player.name.clone(), self.opponents[i].name.clone()))
+    }
+    fn create_player_list(
+        ctx: &mut Context,
+        player_name: &String,
+        map: &Map,
+    ) -> (Text, Text, Mesh) {
         let name = TextFragment::new(format!("{:11}", player_name)).color(Color::BLACK);
         let mut text_names = Text::new(name);
 
@@ -109,21 +146,29 @@ impl GameStruct {
         // names
         text_names.set_font("LiberationMono-Regular");
         text_names.set_scale(PxScale::from(18.0));
-        text_names.set_bounds([18.0 * 11., 200.0]);
-        text_names.set_wrap(true);
+        text_names.set_bounds([100., 200.0]);
+        // text_names.set_wrap(true);
         text_names.set_layout(TextLayout {
             v_align: TextAlign::Begin,
             h_align: TextAlign::Begin,
         });
         text_scores.set_font("LiberationMono-Regular");
         text_scores.set_scale(PxScale::from(18.0));
-        text_scores.set_bounds([18.0 * 5., 200.0]);
-        text_scores.set_wrap(true);
+        text_scores.set_bounds([50., 200.0]);
+        // text_scores.set_wrap(true);
         text_scores.set_layout(TextLayout {
             v_align: TextAlign::Begin,
             h_align: TextAlign::End,
         });
-        (text_names, text_scores)
+        let (x, y, len) = map.get_map_corner_and_len();
+        let background = Mesh::new_rectangle(
+            ctx,
+            DrawMode::fill(),
+            Rect::new(x, y + 20., len + 10., 20.0),
+            Color::BLACK,
+        )
+        .unwrap();
+        (text_names, text_scores, background)
     }
     fn upload_opponet_images(ctx: &mut Context) -> HashMap<Direction, Image> {
         let mut images = HashMap::new();
@@ -419,6 +464,14 @@ impl GameStruct {
     }
     fn draw_opponent_list(&mut self, canvas: &mut graphics::Canvas) -> GameResult {
         let (x, y, len) = self.map.get_map_corner_and_len();
+        // Draw background
+        if self.closest_opponent.is_some() {
+            let i = self.closest_opponent.unwrap() as f32 ;
+            canvas.draw(
+                &self.score_list.2,
+                DrawParam::default().dest([-5., i* 18.0 + 15.0]),
+            );
+        }
         canvas.draw(&self.score_list.0, DrawParam::default().dest([x, y + 20.]));
         canvas.draw(
             &self.score_list.1,
