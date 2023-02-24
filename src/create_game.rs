@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::net::UdpSocket;
 
+use crate::state::Map;
 use crate::{SCREEN_WIDTH};
 use crate::drawer::{Button, Drawer, Input};
 use crate::view::View;
@@ -171,12 +172,14 @@ impl CreateGameStruct {
                     match UdpSocket::bind(local_ip().unwrap().to_string() + ":35353") {
                         Ok(_) => {
                             let player_name = self.name.contents();
-                            new_view = Some(View::Game(GameStruct::new(ctx, player_name).unwrap()));
+                            let map = Map::make_from_file(ctx, self.map_name.as_ref().unwrap());
+                            new_view = Some(View::Game(GameStruct::new(ctx, player_name, map).unwrap()));
                         }
                         Err(_) => {
                             self.display_error = true;
                         }
                     }
+
                     break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));

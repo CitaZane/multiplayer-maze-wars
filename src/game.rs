@@ -34,8 +34,8 @@ pub struct GameStruct {
 }
 
 impl GameStruct {
-    pub fn new(ctx: &mut Context, player_name: String) -> GameResult<Self> {
-        let map = Map::new(ctx);
+    pub fn new(ctx: &mut Context, player_name: String, map:Map) -> GameResult<Self> {
+        // let map = Map::new(ctx);
         let score_list = GameStruct::create_player_list(ctx, &player_name, &map);
         Ok(Self {
             map,

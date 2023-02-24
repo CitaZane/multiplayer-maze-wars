@@ -1,3 +1,6 @@
+use std::fs::File;
+use std::io::{BufReader, BufRead};
+
 use crate::player::Player;
 use crate::{SCREEN_WIDTH, VIEWPORT_HEIGHT};
 use ggez::graphics::{DrawMode, MeshBuilder};
@@ -10,6 +13,7 @@ use ggez::{
 // pub const MAP_WIDTH: f32 = 33.0;
 // pub const H_OFFSET: f32 = (SCREEN_WIDTH - MAP_WIDTH * TILE_SIZE) / 2.0;
 // pub const V_OFFSET: f32 = VIEWPORT_HEIGHT + 20.0 * 2.0;
+#[derive( Clone, Debug)]
 pub struct Map {
     pub maze: Vec<Vec<i32>>,
     pub graphics: Option<Mesh>,
@@ -20,8 +24,8 @@ pub struct Map {
 }
 // Map size 33X17
 impl Map {
-    pub fn new(ctx: &mut Context) -> Self {
-        let maze = Map::level_one();
+    pub fn new(ctx: &mut Context, maze:Vec<Vec<i32>>) -> Self {
+        // let maze = Map::level_one();
         // let graphics = Map::register_graphics(&maze, ctx);
         let player_arrow = Image::from_path(ctx, "/arrow.png").expect("Arrow image missing");
         let mut map = Map {
@@ -34,6 +38,20 @@ impl Map {
         };
         map.register_graphics(ctx);
         map
+    }
+    pub fn make_from_file(ctx: &mut Context, path:&String)->Map{
+        let input = File::open(path).expect("Map not found");
+        let buffered = BufReader::new(input);
+        let mut map = vec![];
+        for line in buffered.lines() {
+            let mut row = vec![];
+            for tile in line.expect("Invalid line in map").chars(){
+                row.push((tile.to_string()).parse::<i32>().unwrap());
+            }
+            map.push(row);
+        }
+        Map::new(ctx, map)
+
     }
     pub fn empty_map(ctx: &mut Context) -> Self {
         let mut maze = vec![vec![0; 33]; 17];

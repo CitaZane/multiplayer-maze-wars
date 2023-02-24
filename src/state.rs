@@ -20,6 +20,7 @@ pub struct State {
     pub server_ip: String,
     pub channels: (Sender<Message>, Receiver<Message>),
     pub client: Option<Arc<Client>>,
+    pub map:Option<Map>,
 }
 
 impl State {
@@ -29,6 +30,7 @@ impl State {
             server_ip: String::new(),
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
+            map:None,
         })
     }
     fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
@@ -66,6 +68,7 @@ impl EventHandler for State {
                     }
                     Message::OpponentList(list) => game.add_opponents(list),
                     Message::PlayerShot(shot_data) => game.register_shooting(shot_data),
+                    Message::Map(data)=>{game.map = Map::new(ctx, data)}
                 }
             }
 
@@ -145,13 +148,14 @@ impl EventHandler for State {
                 }
                 View::Game(_) => {}
                 View::CreateMap(view_data) => {
+                    view_data.name_input_active = false;
                     view_data.register_click(x, y,ctx);
                     new_view = view_data.check_mouse_click(x, y, ctx);
                 }
             };
 
             if let Some(view) = new_view {
-                if let View::Game(_) = &view {
+                if let View::Game(g) = &view {
                     let previous_view = &self.view;
                     // if create game was previously -> create server
                     // if join game was previously -> connect to server
@@ -182,10 +186,10 @@ impl EventHandler for State {
                             let mut server = Server::new();
                             let server_ip =
                                 server.socket.try_clone().unwrap().local_addr().unwrap();
-
+                            self.map = Some(g.map.clone());
                             self.server_ip = server_ip.to_string();
-
-                            thread::spawn(move || server.start().unwrap());
+                            let maze = self.map.as_ref().unwrap().maze.clone();
+                            thread::spawn(move || server.start(maze).unwrap());
                             thread::spawn(move || {
                                 client_clone.listen_for_messages(server_ip.to_string(), send_ch)
                             });
