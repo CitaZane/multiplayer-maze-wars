@@ -266,6 +266,7 @@ impl GameStruct {
                 && sprite_x_start > 0.0
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
                 && self.buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
+                && self.buffer[(x - x_offset + scaled_size) as usize] + y_offset < y + scaled_size
             {
                 // find correct direction
                 let player_dir = self.player.get_opponent_direction(&self.opponents[i].dir);
