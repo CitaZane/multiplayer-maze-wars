@@ -173,7 +173,7 @@ impl CreateGameStruct {
                         Ok(_) => {
                             let player_name = self.name.contents();
                             let map = Map::make_from_file(ctx, self.map_name.as_ref().unwrap());
-                            new_view = Some(View::Game(GameStruct::new(ctx, player_name, map).unwrap()));
+                            new_view = Some(View::Game(GameStruct::new(ctx, player_name, map,(0.,0.)).unwrap()));
                         }
                         Err(_) => {
                             self.display_error = true;

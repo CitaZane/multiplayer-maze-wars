@@ -35,11 +35,11 @@ pub struct GameStruct {
 }
 
 impl GameStruct {
-    pub fn new(ctx: &mut Context, player_name: String, map: Map) -> GameResult<Self> {
+    pub fn new(ctx: &mut Context, player_name: String, map: Map, player_pos:(f32,f32)) -> GameResult<Self> {
         let score_list = GameStruct::create_player_list(ctx, &player_name, &map);
         Ok(Self {
             map,
-            player: Player::new(player_name),
+            player: Player::new(player_name, player_pos),
             opponents: vec![],
             opponent_img: GameStruct::upload_opponet_images(ctx),
             players_last_pos: Vec2 { x: 0.0, y: 0.0 },
@@ -354,10 +354,10 @@ impl GameStruct {
                     side = 1;
                 }
                 if map_x as usize >= maze[0].len() {
-                    map_x -= 1
+                    map_x = 32
                 }
-                if map_y as usize >= maze.len() {
-                    map_y -= 1
+                if map_y as usize >= maze.len(){
+                    map_y = 16
                 }
                 if maze[map_y as usize][map_x as usize] > 0 {
                     hit = 1;
@@ -480,7 +480,7 @@ impl GameStruct {
     pub fn add_opponents(&mut self, list: Vec<String>) {
         for player_name in list.iter() {
             if player_name.to_owned() != self.player.name {
-                let opponent = Player::new(player_name.to_string());
+                let opponent = Player::new(player_name.to_string(), (0.,0.));
                 self.opponents.push(opponent);
             }
         }

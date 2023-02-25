@@ -68,7 +68,12 @@ impl EventHandler for State {
                     }
                     Message::OpponentList(list) => game.add_opponents(list),
                     Message::PlayerShot(shot_data) => game.register_shooting(shot_data),
-                    Message::Map(data)=>{game.map = Map::new(ctx, data)}
+                    Message::Map(data)=>{
+                        game.map = Map::new(ctx, data);
+                        let real_location = game.map.get_random_location();
+                        game.player.pos.x = real_location.0;
+                        game.player.pos.y = real_location.1;
+                    }
                 }
             }
             if !ctx.keyboard.is_key_pressed(KeyCode::Space) {

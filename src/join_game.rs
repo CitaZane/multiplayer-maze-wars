@@ -142,7 +142,7 @@ impl JoinGameStruct {
                     let player_name = self.name.contents();
                     let temp_map = vec![vec![1;33];17];
                     let map = Map::new(ctx, temp_map);
-                    new_view = Some(View::Game(GameStruct::new(ctx, player_name, map).unwrap()));
+                    new_view = Some(View::Game(GameStruct::new(ctx, player_name, map, (0.,0.)).unwrap()));
                     break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));
