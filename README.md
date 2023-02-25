@@ -1,9 +1,10 @@
 ## To-do
-- [ ] fix shooting -> only once per space bar press
+- [X] fix shooting -> only once per space bar press
 - [ ] Create 3 maps total
-- [ ] Add possibility to choose map
+- [X] Add possibility to choose map
 - [ ] Add 2sec shooting block after getting shot
 - [ ] handle players and server leaving
+- [ ] Add player placement in game -> somehow calculated so not inside wall. It shuld be calculated after the server sent the map.
 
 <!-- optional -->
 - [ ] Maybe also can't get shot agin in those 2 sec?
