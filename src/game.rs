@@ -31,11 +31,11 @@ pub struct GameStruct {
     buffer: Vec<f32>,
     score_list: (Text, Text, Mesh),
     closest_opponent: Option<usize>,
+    bullet:Option<(Mesh,f32, f32)>
 }
 
 impl GameStruct {
     pub fn new(ctx: &mut Context, player_name: String, map: Map) -> GameResult<Self> {
-        // let map = Map::new(ctx);
         let score_list = GameStruct::create_player_list(ctx, &player_name, &map);
         Ok(Self {
             map,
@@ -48,6 +48,7 @@ impl GameStruct {
             buffer: vec![],
             score_list,
             closest_opponent: None,
+            bullet:None,
         })
     }
     pub fn register_shooting(&mut self, shot_data: (String, String)) {
@@ -73,11 +74,23 @@ impl GameStruct {
         }
         self.update_closest_opponent();
         self.update_score_list();
-
+        self.update_bullet();
+        
         //update last position stats
         self.players_last_pos = self.player.pos;
         self.players_last_dir = self.player.dir.clone();
         Ok(())
+    }
+    fn update_bullet(&mut self){
+        if self.bullet.is_some(){
+            let bullet = self.bullet.as_mut().unwrap();
+            bullet.1 -=8.;
+            bullet.2 = bullet.2 *0.9;
+            if bullet.1 <= 20. + VIEWPORT_HEIGHT /2.{
+                self.bullet = None
+            }
+            
+        }
     }
     fn update_score_list(&mut self) {
         for (i, score) in self.score_list.1.fragments_mut().iter_mut().enumerate() {
@@ -125,7 +138,10 @@ impl GameStruct {
             distance += 1.0
         }
     }
-    pub fn shoot(&mut self) -> Option<(String, String)> {
+    pub fn shoot(&mut self, ctx: &mut Context) -> Option<(String, String)> {
+        // shoot the bullet
+        self.bullet = Some((Mesh::new_rectangle(ctx, DrawMode::fill(), Rect::new(0., 0., 10.0, 10.0), Color::BLACK).unwrap(), 20.+ VIEWPORT_HEIGHT,1.));
+
         if self.closest_opponent.is_none() {
             return None;
         }
@@ -194,10 +210,18 @@ impl GameStruct {
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
         canvas.draw(&mesh, DrawParam::default());
-
+        self.draw_bullet(canvas)?;
         self.draw_opponents(canvas)?;
         self.draw_opponent_list(canvas)?;
 
+        Ok(())
+    }
+    fn draw_bullet(&mut self, canvas: &mut graphics::Canvas) -> GameResult{
+        if self.bullet.is_none(){
+            return Ok(())        
+        }
+        let (bullet, y, scale) = self.bullet.as_ref().unwrap();
+        canvas.draw(bullet, DrawParam::default().dest([SCREEN_WIDTH/2., *y]).scale([*scale, *scale]));
         Ok(())
     }
     fn draw_opponents(&mut self, canvas: &mut graphics::Canvas) -> GameResult {

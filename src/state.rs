@@ -108,7 +108,7 @@ impl EventHandler for State {
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Space) {
                 if game.player.can_shoot {                    
-                    let shot = game.shoot();
+                    let shot = game.shoot(ctx);
                     if shot.is_some() {
                         let (shooter, target) = shot.unwrap();
                         let client = self.client.as_ref().unwrap();

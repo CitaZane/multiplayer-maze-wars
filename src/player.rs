@@ -1,4 +1,4 @@
-use ggez::glam::Vec2;
+use ggez::{glam::Vec2};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use throttle::Throttle;
