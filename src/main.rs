@@ -8,6 +8,7 @@ pub mod drawer;
 pub mod game;
 pub mod join_game;
 pub mod main_menu;
+pub mod create_map;
 pub mod map;
 pub mod player;
 pub mod server;

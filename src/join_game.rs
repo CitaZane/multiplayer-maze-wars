@@ -7,7 +7,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer, Input},
-    view::View,
+    view::View, state::Map,
 };
 
 use super::{game::GameStruct, main_menu::MainMenuStruct};
@@ -140,7 +140,9 @@ impl JoinGameStruct {
                     }
                 } else if name == "JOIN_GAME" {
                     let player_name = self.name.contents();
-                    new_view = Some(View::Game(GameStruct::new(ctx, player_name).unwrap()));
+                    let temp_map = vec![vec![1;33];17];
+                    let map = Map::new(ctx, temp_map);
+                    new_view = Some(View::Game(GameStruct::new(ctx, player_name, map).unwrap()));
                     break;
                 } else if name == "BACK_ARROW_IMG" {
                     new_view = Some(View::MainMenu(MainMenuStruct::new(ctx).unwrap()));

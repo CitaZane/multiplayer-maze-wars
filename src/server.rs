@@ -14,6 +14,7 @@ pub enum Message {
     PlayerShot((String, String)),   //Shooers name, opponents name
     ClientJoined((String, String)), // Name, ip-address
     PlayerMoved(String, (f32, f32), (f32, f32)), // Name, Coordinates(x,y), Direction (x, y)
+    Map(Vec<Vec<i32>>)
 }
 pub struct Server {
     pub socket: UdpSocket,
@@ -29,7 +30,7 @@ impl Server {
         }
     }
 
-    pub fn start(&mut self) -> std::io::Result<()> {
+    pub fn start(&mut self, maze:Vec<Vec<i32>>) -> std::io::Result<()> {
         println!("Starting server...");
         println!("");
 
@@ -44,6 +45,7 @@ impl Server {
                 Message::ClientJoined((name, ip_address)) => {
                     self.clients.insert(name.clone(), ip_address.clone());
                     self.send_user_list(name);
+                    self.send_map(name,maze.clone());
                     self.send_to_all_clients(m);
                 }
                 Message::PlayerMoved(_, _, _) => {
@@ -55,6 +57,17 @@ impl Server {
                 _ => {}
             };
         }
+    }
+    fn send_map(&self, client: &String,maze:Vec<Vec<i32>>){
+        let msg = Message::Map(maze);
+        let m = serde_json::to_vec(&msg).unwrap();
+        let clien_socket = self.clients.get(client).unwrap();
+        self.socket
+            .send_to(
+                &m,
+                SocketAddr::from_str(&clien_socket).expect("Cant send data to all clients."),
+            )
+            .unwrap();
     }
     fn send_user_list(&self, client: &String) {
         // send message back to sender

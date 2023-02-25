@@ -7,7 +7,7 @@ use ggez::{
 
 use crate::{
     drawer::{Button, Drawer},
-    view::View,
+    view::View, create_map::CreateMap,
 };
 
 use super::{create_game::CreateGameStruct, join_game::JoinGameStruct};
@@ -48,6 +48,15 @@ impl MainMenuStruct {
                 button_dimensions.height,
             ),
         );
+        elems.insert(
+            "CREATE_MAP".to_string(),
+            graphics::Rect::new(
+                button_dimensions.horizontal_offset,
+                200.0 + buttons_gap * 2.,
+                button_dimensions.width,
+                button_dimensions.height,
+            ),
+        );
 
         elems
     }
@@ -65,6 +74,12 @@ impl MainMenuStruct {
             ctx,
             275.0,
             *self.element_rects.get("JOIN_GAME").unwrap(),
+        )?;
+        self.drawer.draw_create_map_button(
+            canvas,
+            ctx,
+            350.0,
+            *self.element_rects.get("CREATE_MAP").unwrap(),
         )?;
         self.drawer
             .draw_eye(canvas, ctx)
@@ -97,6 +112,8 @@ impl MainMenuStruct {
                     // new_view = Some(View::Game(GameStruct::new(ctx).unwrap())); // Dev Option !
                     // break;                                                      // For fast boot!
                     // Comment in for normal work!
+                }else if name == "CREATE_MAP" {
+                    new_view = Some(View::CreateMap(CreateMap::new(ctx).unwrap()));
                 }
             }
         }

@@ -5,13 +5,14 @@ use ggez::{
 
 use crate::{
     create_game::CreateGameStruct, game::GameStruct, join_game::JoinGameStruct,
-    main_menu::MainMenuStruct,
+    main_menu::MainMenuStruct, create_map::CreateMap,
 };
 pub enum View {
     Game(GameStruct),
     MainMenu(MainMenuStruct),
     JoinGame(JoinGameStruct),
     CreateGame(CreateGameStruct),
+    CreateMap(CreateMap)
 }
 impl View {
     pub fn draw(&mut self, canvas: &mut graphics::Canvas, ctx: &mut Context) -> GameResult {
@@ -20,6 +21,7 @@ impl View {
             View::MainMenu(view) => view.draw(canvas, ctx)?,
             View::JoinGame(view) => view.draw(canvas, ctx)?,
             View::CreateGame(view) => view.draw(canvas, ctx)?,
+            View::CreateMap(view) => view.draw(canvas, ctx)?,
         };
         Ok(())
     }

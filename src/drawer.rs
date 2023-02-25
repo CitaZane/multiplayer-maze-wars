@@ -173,6 +173,72 @@ impl Drawer {
 
         Ok(())
     }
+    pub fn draw_save_map_button(
+        &self,
+        canvas: &mut graphics::Canvas,
+        ctx: &mut Context,
+        y: f32,
+        create_game_rect: Rect,
+    ) -> GameResult {
+        // button rect
+        let create_game_btn = graphics::Mesh::new_rectangle(
+            ctx,
+            DrawMode::stroke(1.0),
+            create_game_rect,
+            Color::BLACK,
+        )?;
+        canvas.draw(&create_game_btn, DrawParam::default());
+
+        // button text
+        let mut create_game_text = Text::new("Save Map");
+        create_game_text.set_layout(TextLayout {
+            v_align: TextAlign::Middle,
+            h_align: TextAlign::Middle,
+        });
+        canvas.draw(
+            &create_game_text,
+            DrawParam::from(Vec2::new(
+                self.button_dimensions.horizontal_offset + self.button_dimensions.width / 2.0,
+                y + self.button_dimensions.height / 2.0,
+            ))
+            .color(Color::BLACK),
+        );
+
+        Ok(())
+    }
+    pub fn draw_create_map_button(
+        &self,
+        canvas: &mut graphics::Canvas,
+        ctx: &mut Context,
+        y: f32,
+        create_map_rect: Rect,
+    ) -> GameResult {
+        // button rect
+        let create_map_btn = graphics::Mesh::new_rectangle(
+            ctx,
+            DrawMode::stroke(1.0),
+            create_map_rect,
+            Color::BLACK,
+        )?;
+        canvas.draw(&create_map_btn, DrawParam::default());
+
+        // button text
+        let mut join_game_text = Text::new("Create Map");
+        join_game_text.set_layout(TextLayout {
+            v_align: TextAlign::Middle,
+            h_align: TextAlign::Middle,
+        });
+        canvas.draw(
+            &join_game_text,
+            DrawParam::from(Vec2::new(
+                self.button_dimensions.horizontal_offset + self.button_dimensions.width / 2.0,
+                y + self.button_dimensions.height / 2.0,
+            ))
+            .color(Color::BLACK),
+        );
+
+        Ok(())
+    }
 
     pub fn draw_back_arrow_img(
         &self,
