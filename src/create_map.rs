@@ -19,6 +19,7 @@ pub struct CreateMap {
     pub name: Text,
     map: Map,
     drawer: Drawer,
+    pub drag_mode: bool,
 }
 
 impl CreateMap {
@@ -30,7 +31,35 @@ impl CreateMap {
             name_input_active: false,
             map: Map::empty_map(ctx),
             drawer,
+            drag_mode: false,
         })
+    }
+    pub fn drag_mode_on(&mut self) {
+        self.drag_mode = true;
+    }
+    pub fn drag_mode_off(&mut self) {
+        self.drag_mode = false;
+    }
+    pub fn register_drag(&mut self, mouse_x: f32, mouse_y: f32, ctx: &mut Context) {
+        let in_bounds = self.click_in_bounds(mouse_x, mouse_y);
+        if !in_bounds {
+            return
+        }
+        let (map_x, map_y) = self.click_pos_in_map(mouse_x, mouse_y);
+        if map_x == 0
+            || map_y == 0
+            || map_x == self.map.maze[0].len() - 1
+            || map_y == self.map.maze.len() - 1
+        {
+            return;
+        }
+        if self.map.maze[map_y][map_x] == 0 {
+            self.map.maze[map_y][map_x] = 1
+        } else {
+            return
+        }
+        self.map.register_graphics(ctx);
+
     }
     fn save_map(&self) -> Result<(), Error> {
         let path = format!("maps/{}.txt", self.name.contents());
@@ -128,17 +157,11 @@ impl CreateMap {
         new_view
     }
     pub fn register_click(&mut self, mouse_x: f32, mouse_y: f32, ctx: &mut Context) {
-        // bottom left corner x and y
-        let (x, y, len) = self.map.get_map_corner_and_len();
-        let height = self.map.tile_size * self.map.height;
-        if mouse_x > x + len || mouse_x < x {
-            return;
+        let in_bounds = self.click_in_bounds(mouse_x, mouse_y);
+        if !in_bounds {
+            return
         }
-        if mouse_y > y || mouse_y < y - height {
-            return;
-        }
-        let map_x = ((mouse_x - self.map.h_offset()) / self.map.tile_size) as usize;
-        let map_y = ((mouse_y - self.map.v_offset()) / self.map.tile_size) as usize;
+        let (map_x, map_y) = self.click_pos_in_map(mouse_x, mouse_y);
         if map_x == 0
             || map_y == 0
             || map_x == self.map.maze[0].len() - 1
@@ -152,5 +175,22 @@ impl CreateMap {
             self.map.maze[map_y][map_x] = 0
         }
         self.map.register_graphics(ctx);
+    }
+    fn click_pos_in_map(&self, mouse_x: f32,mouse_y: f32)->(usize, usize){
+        let map_x = ((mouse_x - self.map.h_offset()) / self.map.tile_size) as usize;
+        let map_y = ((mouse_y - self.map.v_offset()) / self.map.tile_size) as usize;
+        (map_x, map_y)
+    }
+    fn click_in_bounds(&self, mouse_x: f32, mouse_y: f32) -> bool {
+        // bottom left corner x and y
+        let (x, y, len) = self.map.get_map_corner_and_len();
+        let height = self.map.tile_size * self.map.height;
+        if mouse_x > x + len || mouse_x < x {
+            return false;
+        }
+        if mouse_y > y || mouse_y < y - height {
+            return false;
+        }
+        true
     }
 }

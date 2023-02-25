@@ -205,10 +205,46 @@ impl EventHandler for State {
                 self.view = view;
             }
         }
+        if let MouseButton::Right = button{
+            if let View::CreateMap(map) = &mut self.view{
+                println!("Down!! Lefty");
+                map.drag_mode_on();
+            }
+        }
 
         Ok(())
     }
+    fn mouse_button_up_event(
+        &mut self,
+        ctx: &mut Context,
+        button: MouseButton,
+        x: f32,
+        y: f32,
+    ) -> Result<(), GameError>{
+        if let MouseButton::Right = button{
+            if let View::CreateMap(map) = &mut self.view{
+                map.drag_mode_off();
+            }
+        }
 
+        Ok(())
+    }
+    fn mouse_motion_event(
+        &mut self,
+        ctx: &mut Context,
+        x: f32,
+        y: f32,
+        dx:f32,
+        dy:f32
+    ) -> Result<(), GameError>{
+            if let View::CreateMap(map) = &mut self.view{
+                if map.drag_mode{
+                    map.register_drag(x,y,ctx)
+                }
+            }
+
+        Ok(())
+    }
     fn text_input_event(&mut self, _ctx: &mut Context, character: char) -> Result<(), GameError> {
         match &mut self.view {
             View::Game(_) => {}
