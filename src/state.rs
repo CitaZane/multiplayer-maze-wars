@@ -67,7 +67,14 @@ impl EventHandler for State {
                         }
                     }
                     Message::OpponentList(list) => game.add_opponents(list),
-                    Message::PlayerShot(shot_data) => game.register_shooting(shot_data),
+                    Message::PlayerShot(shot_data) => {
+                        let got_shot = game.register_shooting(shot_data);
+                        if got_shot{
+                            let client = self.client.as_ref().unwrap();
+                            let m = State::prepare_player_data_to_send(&client.name, &game.player);
+                            client.socket.send_to(&m, self.server_ip.clone())?;
+                        }
+                    },
                     Message::Map(data)=>{
                         game.map = Map::new(ctx, data);
                         let real_location = game.map.get_random_location();

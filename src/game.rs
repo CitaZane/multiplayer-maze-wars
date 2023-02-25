@@ -51,21 +51,26 @@ impl GameStruct {
             bullet:None,
         })
     }
-    pub fn register_shooting(&mut self, shot_data: (String, String)) {
+    pub fn register_shooting(&mut self, shot_data: (String, String))->bool {
         let shooter = shot_data.0;
         let target = shot_data.1;
+        for player in self.opponents.iter_mut() {
+            if player.name == shooter {
+                player.shot_opponent();
+            } else if player.name == target {
+                player.got_shot();
+            }
+        }
         if self.player.name == shooter {
             self.player.shot_opponent()
         } else if self.player.name == target {
-            self.player.got_shot()
+            self.player.got_shot();
+            let new_loc = self.map.get_random_location();
+            self.player.pos.x = new_loc.0;
+            self.player.pos.y = new_loc.1;
+            return true
         }
-        for player in self.opponents.iter_mut() {
-            if player.name == shooter {
-                player.shot_opponent()
-            } else if player.name == target {
-                player.got_shot()
-            }
-        }
+        return false
     }
     pub fn update(&mut self) -> GameResult {
         // Update scene
@@ -84,8 +89,8 @@ impl GameStruct {
     fn update_bullet(&mut self){
         if self.bullet.is_some(){
             let bullet = self.bullet.as_mut().unwrap();
-            bullet.1 -=8.;
-            bullet.2 = bullet.2 *0.9;
+            bullet.1 -=15.;
+            bullet.2 = bullet.2 *0.8;
             if bullet.1 <= 20. + VIEWPORT_HEIGHT /2.{
                 self.bullet = None
             }
