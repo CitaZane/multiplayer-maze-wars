@@ -186,37 +186,30 @@ impl EventHandler for State {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
                             let server_ip = view_data.ip_address.contents() + ":35353";
-
-                            let client = Arc::new(Client::new(name));
-                            let client_clone = Arc::clone(&client);
-                            let client_clone1 = Arc::clone(&client);
-                            let send_ch = self.channels.0.clone();
-                            let send_ch1 = self.channels.0.clone();
+                            let client = Arc::new(Client::new(name, server_ip.clone()));
 
                             self.client = Some(client.clone());
                             self.server_ip = server_ip.clone().to_string();
-                            let server_ip_clone = server_ip.clone();
+
+                            let client_clone = Arc::clone(&client);
+
+                            let send_ch = self.channels.0.clone();
+                            let send_ch1 = self.channels.0.clone();
+
                             let channels = channel::<bool>();
                             thread::spawn(move || loop {
                                 if let Ok(_) = channels.1.try_recv() {
-                                    println!("quitting");
-                                    send_ch1.send(Message::ConnectionLost).unwrap();
+                                    println!("Lost connection to server...");
+                                    send_ch.send(Message::ConnectionLost).unwrap();
                                     return;
                                 };
 
-                                println!("sending ping");
-
-                                let m = serde_json::to_vec(&Message::Ping).unwrap();
-                                client_clone1
-                                    .socket
-                                    .send_to(&m, server_ip_clone.clone())
-                                    .unwrap();
-
+                                client.send_ping_msg();
                                 thread::sleep(Duration::from_millis(1000))
                             });
 
                             thread::spawn(move || {
-                                client_clone.listen_for_messages(server_ip.clone(), send_ch);
+                                client_clone.listen_for_messages(send_ch1);
                                 channels.0.send(true).unwrap();
                             });
                         }
@@ -224,21 +217,20 @@ impl EventHandler for State {
                             let name = view_data.name.contents();
                             let send_ch = self.channels.0.clone();
 
-                            // create client
-                            let client = Arc::new(Client::new(name));
-                            let client_clone = Arc::clone(&client);
-                            self.client = Some(client.clone());
-
                             let mut server = Server::new();
                             let server_ip =
                                 server.socket.try_clone().unwrap().local_addr().unwrap();
+                            // create client
+                            let client = Arc::new(Client::new(name, server_ip.to_string().clone()));
+                            let client_clone = Arc::clone(&client);
+
+                            self.client = Some(client.clone());
                             self.map = Some(g.map.clone());
                             self.server_ip = server_ip.to_string();
+
                             let maze = self.map.as_ref().unwrap().maze.clone();
                             thread::spawn(move || server.start(maze).unwrap());
-                            thread::spawn(move || {
-                                client_clone.listen_for_messages(server_ip.to_string(), send_ch)
-                            });
+                            thread::spawn(move || client_clone.listen_for_messages(send_ch));
                         }
                         View::Game(_) => {}
                         View::MainMenu(_) => {}
