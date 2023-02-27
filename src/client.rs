@@ -2,11 +2,8 @@ use std::{
     net::{SocketAddr, UdpSocket},
     str::FromStr,
     sync::{
-        mpsc::{self, Receiver, Sender},
-        Arc,
+        mpsc::{Sender},
     },
-    thread,
-    time::Duration,
 };
 
 use local_ip_address::local_ip;
@@ -60,7 +57,7 @@ impl Client {
                     send_ch.send(m).unwrap();
                 }
 
-                Err(e) => {
+                Err(_e) => {
                     return;
                 }
             }

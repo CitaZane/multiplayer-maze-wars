@@ -64,7 +64,7 @@ impl Server {
                     self.send_to_all_clients(m);
                 }
                 Message::Ping => {
-                    let s = 0;
+                    // let s = 0;
                     println!("Got ping {}", src.to_string());
                     self.socket.send_to(&buf[..amt], src).unwrap();
                 }
