@@ -36,24 +36,28 @@ impl Client {
 
         let mut buf = [0; 2048];
         loop {
-            let (amt, _) = self
-                .socket
-                .recv_from(&mut buf)
-                .expect("Didnt receive any data");
-            let m: Message =
-                serde_json::from_slice(&buf[..amt]).expect("Cant serialize from slice.");
+            match self.socket.recv_from(&mut buf) {
+                Ok((amt, _)) => {
+                    let m: Message =
+                        serde_json::from_slice(&buf[..amt]).expect("Cant serialize from slice.");
 
-            match &m {
-                Message::ClientJoined((name, ip_address)) => {
-                    println!("CLIENT: New user joined: {} {}", name, ip_address);
+                    match &m {
+                        Message::ClientJoined((name, ip_address)) => {
+                            println!("CLIENT: New user joined: {} {}", name, ip_address);
+                        }
+                        Message::Ping => {
+                            println!("Got ping back")
+                        }
+                        _ => {}
+                    };
+                    send_ch.send(m).unwrap();
                 }
-                // Message::PlayerMoved(_name, _cor, _dir) => {
-                // println!("Client: {:?}", &m)
-                // }
-                _ => {}
-            };
 
-            send_ch.send(m).unwrap();
+                Err(e) => {
+                    println!("Error! {e}");
+                    return;
+                }
+            }
         }
     }
 }

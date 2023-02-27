@@ -1,5 +1,6 @@
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use std::time::Duration;
 
 use crate::client::Client;
 
@@ -20,7 +21,7 @@ pub struct State {
     pub server_ip: String,
     pub channels: (Sender<Message>, Receiver<Message>),
     pub client: Option<Arc<Client>>,
-    pub map:Option<Map>,
+    pub map: Option<Map>,
 }
 
 impl State {
@@ -30,7 +31,7 @@ impl State {
             server_ip: String::new(),
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            map:None,
+            map: None,
         })
     }
     fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
@@ -69,18 +70,25 @@ impl EventHandler for State {
                     Message::OpponentList(list) => game.add_opponents(list),
                     Message::PlayerShot(shot_data) => {
                         let got_shot = game.register_shooting(shot_data);
-                        if got_shot{
+                        if got_shot {
                             let client = self.client.as_ref().unwrap();
                             let m = State::prepare_player_data_to_send(&client.name, &game.player);
                             client.socket.send_to(&m, self.server_ip.clone())?;
                         }
-                    },
-                    Message::Map(data)=>{
+                    }
+                    Message::Map(data) => {
                         game.map = Map::new(ctx, data);
                         let real_location = game.map.get_random_location();
                         game.player.pos.x = real_location.0;
                         game.player.pos.y = real_location.1;
                     }
+
+                    Message::ConnectionLost => {
+                        self.view = View::MainMenu(MainMenuStruct::new(ctx).unwrap());
+                        return Ok(());
+                    }
+
+                    _ => {}
                 }
             }
             if !ctx.keyboard.is_key_pressed(KeyCode::Space) {
@@ -119,7 +127,7 @@ impl EventHandler for State {
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Space) {
-                if game.player.can_shoot {                    
+                if game.player.can_shoot {
                     let shot = game.shoot(ctx);
                     if shot.is_some() {
                         let (shooter, target) = shot.unwrap();
@@ -128,7 +136,7 @@ impl EventHandler for State {
                         client.socket.send_to(&m, self.server_ip.clone())?;
                     }
                     game.player.can_shoot = false;
-                }                
+                }
             }
             game.update()?;
         }
@@ -164,7 +172,7 @@ impl EventHandler for State {
                 View::Game(_) => {}
                 View::CreateMap(view_data) => {
                     view_data.name_input_active = false;
-                    view_data.register_click(x, y,ctx);
+                    view_data.register_click(x, y, ctx);
                     new_view = view_data.check_mouse_click(x, y, ctx);
                 }
             };
@@ -181,12 +189,35 @@ impl EventHandler for State {
 
                             let client = Arc::new(Client::new(name));
                             let client_clone = Arc::clone(&client);
+                            let client_clone1 = Arc::clone(&client);
                             let send_ch = self.channels.0.clone();
+                            let send_ch1 = self.channels.0.clone();
 
                             self.client = Some(client.clone());
-                            self.server_ip = server_ip.to_string();
+                            self.server_ip = server_ip.clone().to_string();
+                            let server_ip_clone = server_ip.clone();
+                            let channels = channel::<bool>();
+                            thread::spawn(move || loop {
+                                if let Ok(_) = channels.1.try_recv() {
+                                    println!("quitting");
+                                    send_ch1.send(Message::ConnectionLost).unwrap();
+                                    return;
+                                };
+
+                                println!("sending ping");
+
+                                let m = serde_json::to_vec(&Message::Ping).unwrap();
+                                client_clone1
+                                    .socket
+                                    .send_to(&m, server_ip_clone.clone())
+                                    .unwrap();
+
+                                thread::sleep(Duration::from_millis(1000))
+                            });
+
                             thread::spawn(move || {
-                                client_clone.listen_for_messages(server_ip, send_ch)
+                                client_clone.listen_for_messages(server_ip.clone(), send_ch);
+                                channels.0.send(true).unwrap();
                             });
                         }
                         View::CreateGame(view_data) => {
