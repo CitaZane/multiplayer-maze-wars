@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::{BufReader, BufRead};
+use rand::{thread_rng, Rng};
 
 use crate::player::Player;
 use crate::{SCREEN_WIDTH, VIEWPORT_HEIGHT};
@@ -9,10 +10,6 @@ use ggez::{
     graphics::{self, Color, DrawParam, Image, Mesh},
     Context, GameResult,
 };
-// pub const TILE_SIZE: f32 = 9.0;
-// pub const MAP_WIDTH: f32 = 33.0;
-// pub const H_OFFSET: f32 = (SCREEN_WIDTH - MAP_WIDTH * TILE_SIZE) / 2.0;
-// pub const V_OFFSET: f32 = VIEWPORT_HEIGHT + 20.0 * 2.0;
 #[derive( Clone, Debug)]
 pub struct Map {
     pub maze: Vec<Vec<i32>>,
@@ -25,8 +22,6 @@ pub struct Map {
 // Map size 33X17
 impl Map {
     pub fn new(ctx: &mut Context, maze:Vec<Vec<i32>>) -> Self {
-        // let maze = Map::level_one();
-        // let graphics = Map::register_graphics(&maze, ctx);
         let player_arrow = Image::from_path(ctx, "/arrow.png").expect("Arrow image missing");
         let mut map = Map {
             maze,
@@ -38,6 +33,20 @@ impl Map {
         };
         map.register_graphics(ctx);
         map
+    }
+    pub fn get_random_location(&self)->(f32,f32){
+        let mut  tries = 0;
+        loop{
+            if tries == 1000{panic!("Cant find free space in map")}
+        let mut rng = thread_rng();
+
+        let y: usize = rng.gen_range(1..=15);
+        let x: usize = rng.gen_range(1..=32);
+        if self.maze[y][x] == 0{
+            return (x as f32, y as f32);
+        }
+        tries +=1
+        }
     }
     pub fn make_from_file(ctx: &mut Context, path:&String)->Map{
         let input = File::open(path).expect("Map not found");

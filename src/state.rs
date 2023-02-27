@@ -1,5 +1,6 @@
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
+use std::time::Duration;
 
 use crate::client::Client;
 
@@ -20,7 +21,7 @@ pub struct State {
     pub server_ip: String,
     pub channels: (Sender<Message>, Receiver<Message>),
     pub client: Option<Arc<Client>>,
-    pub map:Option<Map>,
+    pub map: Option<Map>,
 }
 
 impl State {
@@ -30,7 +31,7 @@ impl State {
             server_ip: String::new(),
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
-            map:None,
+            map: None,
         })
     }
     fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
@@ -67,8 +68,27 @@ impl EventHandler for State {
                         }
                     }
                     Message::OpponentList(list) => game.add_opponents(list),
-                    Message::PlayerShot(shot_data) => game.register_shooting(shot_data),
-                    Message::Map(data)=>{game.map = Map::new(ctx, data)}
+                    Message::PlayerShot(shot_data) => {
+                        let got_shot = game.register_shooting(shot_data);
+                        if got_shot {
+                            let client = self.client.as_ref().unwrap();
+                            let m = State::prepare_player_data_to_send(&client.name, &game.player);
+                            client.socket.send_to(&m, self.server_ip.clone())?;
+                        }
+                    }
+                    Message::Map(data) => {
+                        game.map = Map::new(ctx, data);
+                        let real_location = game.map.get_random_location();
+                        game.player.pos.x = real_location.0;
+                        game.player.pos.y = real_location.1;
+                    }
+
+                    Message::ConnectionLost => {
+                        self.view = View::MainMenu(MainMenuStruct::new(ctx).unwrap());
+                        return Ok(());
+                    }
+
+                    _ => {}
                 }
             }
             if !ctx.keyboard.is_key_pressed(KeyCode::Space) {
@@ -107,8 +127,8 @@ impl EventHandler for State {
                 }
             }
             if ctx.keyboard.is_key_pressed(KeyCode::Space) {
-                if game.player.can_shoot {                    
-                    let shot = game.shoot();
+                if game.player.can_shoot {
+                    let shot = game.shoot(ctx);
                     if shot.is_some() {
                         let (shooter, target) = shot.unwrap();
                         let client = self.client.as_ref().unwrap();
@@ -116,7 +136,7 @@ impl EventHandler for State {
                         client.socket.send_to(&m, self.server_ip.clone())?;
                     }
                     game.player.can_shoot = false;
-                }                
+                }
             }
             game.update()?;
         }
@@ -152,7 +172,7 @@ impl EventHandler for State {
                 View::Game(_) => {}
                 View::CreateMap(view_data) => {
                     view_data.name_input_active = false;
-                    view_data.register_click(x, y,ctx);
+                    view_data.register_click(x, y, ctx);
                     new_view = view_data.check_mouse_click(x, y, ctx);
                 }
             };
@@ -166,36 +186,51 @@ impl EventHandler for State {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
                             let server_ip = view_data.ip_address.contents() + ":35353";
-
-                            let client = Arc::new(Client::new(name));
-                            let client_clone = Arc::clone(&client);
-                            let send_ch = self.channels.0.clone();
+                            let client = Arc::new(Client::new(name, server_ip.clone()));
 
                             self.client = Some(client.clone());
-                            self.server_ip = server_ip.to_string();
+                            self.server_ip = server_ip.clone().to_string();
+
+                            let client_clone = Arc::clone(&client);
+
+                            let send_ch = self.channels.0.clone();
+                            let send_ch1 = self.channels.0.clone();
+
+                            let channels = channel::<bool>();
+                            thread::spawn(move || loop {
+                                if let Ok(_) = channels.1.try_recv() {
+                                    println!("Lost connection to server...");
+                                    send_ch.send(Message::ConnectionLost).unwrap();
+                                    return;
+                                };
+
+                                client.send_ping_msg();
+                                thread::sleep(Duration::from_millis(1000))
+                            });
+
                             thread::spawn(move || {
-                                client_clone.listen_for_messages(server_ip, send_ch)
+                                client_clone.listen_for_messages(send_ch1);
+                                channels.0.send(true).unwrap();
                             });
                         }
                         View::CreateGame(view_data) => {
                             let name = view_data.name.contents();
                             let send_ch = self.channels.0.clone();
 
-                            // create client
-                            let client = Arc::new(Client::new(name));
-                            let client_clone = Arc::clone(&client);
-                            self.client = Some(client.clone());
-
                             let mut server = Server::new();
                             let server_ip =
                                 server.socket.try_clone().unwrap().local_addr().unwrap();
+                            // create client
+                            let client = Arc::new(Client::new(name, server_ip.to_string().clone()));
+                            let client_clone = Arc::clone(&client);
+
+                            self.client = Some(client.clone());
                             self.map = Some(g.map.clone());
                             self.server_ip = server_ip.to_string();
+
                             let maze = self.map.as_ref().unwrap().maze.clone();
                             thread::spawn(move || server.start(maze).unwrap());
-                            thread::spawn(move || {
-                                client_clone.listen_for_messages(server_ip.to_string(), send_ch)
-                            });
+                            thread::spawn(move || client_clone.listen_for_messages(send_ch));
                         }
                         View::Game(_) => {}
                         View::MainMenu(_) => {}

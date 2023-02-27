@@ -1,7 +1,8 @@
-use ggez::glam::Vec2;
+use ggez::{glam::Vec2};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use throttle::Throttle;
+use rand::{thread_rng, Rng};
 
 pub struct Player {
     pub name: String,
@@ -40,13 +41,23 @@ impl Direction {
             return Direction::Right;
         }
     }
+    pub fn random()->Direction{
+        let mut rng = thread_rng();
+        let x: usize = rng.gen_range(0..=3);
+        return match x{
+            0=> Direction::Up,
+            1 => Direction::Down,
+            2=>Direction::Left,
+            _ =>Direction::Right,
+        }
+    }
 }
 
 impl Player {
-    pub fn new(name:String) -> Self {
+    pub fn new(name:String, pos:(f32,f32)) -> Self {
         Self {
-            pos: Vec2::new(1., 1.),
-            dir: Direction::Right,
+            pos: Vec2::new(pos.0, pos.1),
+            dir: Direction::random(),
             moving_throttle: Throttle::new(Duration::from_millis(100), 1),
             name,
             score:0,

@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashMap;
 
 use crate::map::Map;
@@ -31,15 +32,15 @@ pub struct GameStruct {
     buffer: Vec<f32>,
     score_list: (Text, Text, Mesh),
     closest_opponent: Option<usize>,
+    bullet:Option<(Mesh,f32, f32)>
 }
 
 impl GameStruct {
-    pub fn new(ctx: &mut Context, player_name: String, map: Map) -> GameResult<Self> {
-        // let map = Map::new(ctx);
+    pub fn new(ctx: &mut Context, player_name: String, map: Map, player_pos:(f32,f32)) -> GameResult<Self> {
         let score_list = GameStruct::create_player_list(ctx, &player_name, &map);
         Ok(Self {
             map,
-            player: Player::new(player_name),
+            player: Player::new(player_name, player_pos),
             opponents: vec![],
             opponent_img: GameStruct::upload_opponet_images(ctx),
             players_last_pos: Vec2 { x: 0.0, y: 0.0 },
@@ -48,23 +49,29 @@ impl GameStruct {
             buffer: vec![],
             score_list,
             closest_opponent: None,
+            bullet:None,
         })
     }
-    pub fn register_shooting(&mut self, shot_data: (String, String)) {
+    pub fn register_shooting(&mut self, shot_data: (String, String))->bool {
         let shooter = shot_data.0;
         let target = shot_data.1;
+        for player in self.opponents.iter_mut() {
+            if player.name == shooter {
+                player.shot_opponent();
+            } else if player.name == target {
+                player.got_shot();
+            }
+        }
         if self.player.name == shooter {
             self.player.shot_opponent()
         } else if self.player.name == target {
-            self.player.got_shot()
+            self.player.got_shot();
+            let new_loc = self.map.get_random_location();
+            self.player.pos.x = new_loc.0;
+            self.player.pos.y = new_loc.1;
+            return true
         }
-        for player in self.opponents.iter_mut() {
-            if player.name == shooter {
-                player.shot_opponent()
-            } else if player.name == target {
-                player.got_shot()
-            }
-        }
+        return false
     }
     pub fn update(&mut self) -> GameResult {
         // Update scene
@@ -73,11 +80,23 @@ impl GameStruct {
         }
         self.update_closest_opponent();
         self.update_score_list();
-
+        self.update_bullet();
+        
         //update last position stats
         self.players_last_pos = self.player.pos;
         self.players_last_dir = self.player.dir.clone();
         Ok(())
+    }
+    fn update_bullet(&mut self){
+        if self.bullet.is_some(){
+            let bullet = self.bullet.as_mut().unwrap();
+            bullet.1 -=15.;
+            bullet.2 = bullet.2 *0.8;
+            if bullet.1 <= 20. + VIEWPORT_HEIGHT /2.{
+                self.bullet = None
+            }
+            
+        }
     }
     fn update_score_list(&mut self) {
         for (i, score) in self.score_list.1.fragments_mut().iter_mut().enumerate() {
@@ -125,7 +144,10 @@ impl GameStruct {
             distance += 1.0
         }
     }
-    pub fn shoot(&mut self) -> Option<(String, String)> {
+    pub fn shoot(&mut self, ctx: &mut Context) -> Option<(String, String)> {
+        // shoot the bullet
+        self.bullet = Some((Mesh::new_rectangle(ctx, DrawMode::fill(), Rect::new(0., 0., 10.0, 10.0), Color::BLACK).unwrap(), 20.+ VIEWPORT_HEIGHT,1.));
+
         if self.closest_opponent.is_none() {
             return None;
         }
@@ -194,10 +216,18 @@ impl GameStruct {
         //draw 3D scene
         let mesh = Mesh::from_data(ctx, self.scene.build());
         canvas.draw(&mesh, DrawParam::default());
-
+        self.draw_bullet(canvas)?;
         self.draw_opponents(canvas)?;
         self.draw_opponent_list(canvas)?;
 
+        Ok(())
+    }
+    fn draw_bullet(&mut self, canvas: &mut graphics::Canvas) -> GameResult{
+        if self.bullet.is_none(){
+            return Ok(())        
+        }
+        let (bullet, y, scale) = self.bullet.as_ref().unwrap();
+        canvas.draw(bullet, DrawParam::default().dest([SCREEN_WIDTH/2., *y]).scale([*scale, *scale]));
         Ok(())
     }
     fn draw_opponents(&mut self, canvas: &mut graphics::Canvas) -> GameResult {
@@ -233,10 +263,16 @@ impl GameStruct {
             if x - x_offset > self.buffer.len() as f32 - 1. {
                 x = self.buffer.len() as f32 - 1. + x_offset
             }
+            let max_buf = self.buffer.len() -1;
+            let x_start = cmp::min(max_buf, (x - x_offset )as usize);
+            let x_end = cmp::min(max_buf, (x - x_offset + scaled_size)as usize);
+            let out_of_screen = x - x_offset + scaled_size > max_buf as f32;
             if transform_y >= 0.0
                 && sprite_x_start > 0.0
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
-                && self.buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
+                && self.buffer[(x_start) as usize] + y_offset < y + scaled_size
+                && !out_of_screen
+                && self.buffer[(x_end) as usize] + y_offset < y + scaled_size
             {
                 // find correct direction
                 let player_dir = self.player.get_opponent_direction(&self.opponents[i].dir);
@@ -330,10 +366,10 @@ impl GameStruct {
                     side = 1;
                 }
                 if map_x as usize >= maze[0].len() {
-                    map_x -= 1
+                    map_x = 32
                 }
-                if map_y as usize >= maze.len() {
-                    map_y -= 1
+                if map_y as usize >= maze.len(){
+                    map_y = 16
                 }
                 if maze[map_y as usize][map_x as usize] > 0 {
                     hit = 1;
@@ -456,7 +492,7 @@ impl GameStruct {
     pub fn add_opponents(&mut self, list: Vec<String>) {
         for player_name in list.iter() {
             if player_name.to_owned() != self.player.name {
-                let opponent = Player::new(player_name.to_string());
+                let opponent = Player::new(player_name.to_string(), (0.,0.));
                 self.opponents.push(opponent);
             }
         }
