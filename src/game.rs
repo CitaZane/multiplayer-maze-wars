@@ -1,3 +1,4 @@
+use std::cmp;
 use std::collections::HashMap;
 
 use crate::map::Map;
@@ -262,11 +263,16 @@ impl GameStruct {
             if x - x_offset > self.buffer.len() as f32 - 1. {
                 x = self.buffer.len() as f32 - 1. + x_offset
             }
+            let max_buf = self.buffer.len() -1;
+            let x_start = cmp::min(max_buf, (x - x_offset )as usize);
+            let x_end = cmp::min(max_buf, (x - x_offset + scaled_size)as usize);
+            let out_of_screen = x - x_offset + scaled_size > max_buf as f32;
             if transform_y >= 0.0
                 && sprite_x_start > 0.0
                 && sprite_x_end < VIEWPORT_WIDTH + x_offset
-                && self.buffer[(x - x_offset) as usize] + y_offset < y + scaled_size
-                && self.buffer[(x - x_offset + scaled_size) as usize] + y_offset < y + scaled_size
+                && self.buffer[(x_start) as usize] + y_offset < y + scaled_size
+                && !out_of_screen
+                && self.buffer[(x_end) as usize] + y_offset < y + scaled_size
             {
                 // find correct direction
                 let player_dir = self.player.get_opponent_direction(&self.opponents[i].dir);
