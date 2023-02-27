@@ -210,7 +210,7 @@ impl GameStruct {
         self.map.draw(canvas)?;
         self.map.draw_player_position(canvas, &self.player)?;
         // Helper for displaying opponents on map
-        self.map.draw_opponents(ctx, canvas, &self.opponents)?;
+        // self.map.draw_opponents(ctx, canvas, &self.opponents)?;
 
         self.draw_fps_counter(canvas, ctx)?;
         //draw 3D scene
