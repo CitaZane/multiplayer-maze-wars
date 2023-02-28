@@ -231,6 +231,7 @@ impl GameStruct {
         Ok(())
     }
     fn draw_opponents(&mut self, canvas: &mut graphics::Canvas) -> GameResult {
+        if self.buffer.len() == 0 {return Ok(())}
         let x_offset = (SCREEN_WIDTH - VIEWPORT_WIDTH) / 2.0;
         let y_offset = 20.0;
         let player_dir = self.player.dir.vec();
