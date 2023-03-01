@@ -33,7 +33,13 @@ impl JoinGameStruct {
             drawer,
         })
     }
-
+    pub fn paste_value(&mut self, value:String){
+        if self.ip_input_active{
+            self.ip_address = Text::new(value);
+        }else if self.name_input_active{
+            self.name= Text::new(value);
+        }
+    }
     pub fn get_elements(
         button_dimensions: &Button,
         input_dimensions: &Input,

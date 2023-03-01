@@ -1,6 +1,7 @@
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::thread;
 use std::time::Duration;
+extern crate copypasta;
 
 use crate::client::Client;
 
@@ -15,6 +16,7 @@ use ggez::graphics::{self, Color};
 use ggez::input::keyboard::{self, KeyCode};
 use ggez::{Context, GameError, GameResult};
 use std::sync::{mpsc, Arc};
+use copypasta::{ClipboardContext, ClipboardProvider};
 pub struct State {
     // game_struct: GameStruct,
     pub view: View,
@@ -22,6 +24,7 @@ pub struct State {
     pub channels: (Sender<Message>, Receiver<Message>),
     pub client: Option<Arc<Client>>,
     pub map: Option<Map>,
+    paste_ctx:ClipboardContext,
 }
 
 impl State {
@@ -32,6 +35,7 @@ impl State {
             client: None,
             view: View::MainMenu(MainMenuStruct::new(ctx)?),
             map: None,
+            paste_ctx:ClipboardContext::new().unwrap()
         })
     }
     fn prepare_player_data_to_send(player_name: &String, player_data: &Player) -> Vec<u8> {
@@ -139,6 +143,11 @@ impl EventHandler for State {
                 }
             }
             game.update()?;
+        }
+        if let View::JoinGame(view) = &mut self.view{
+            if ctx.keyboard.is_key_just_pressed(keyboard::KeyCode::V) && ctx.keyboard.is_key_pressed(keyboard::KeyCode::LControl){
+                view.paste_value(self.paste_ctx.get_contents().unwrap());
+            }
         }
         Ok(())
     }
