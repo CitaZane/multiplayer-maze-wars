@@ -52,6 +52,13 @@ impl GameStruct {
             bullet:None,
         })
     }
+    pub fn remove_player(&mut self, player:String){
+        for i in 0..self.opponents.len(){
+            if self.opponents[i].name == player{
+                self.opponents[i].pos= Vec2{x:0.0,y:16.0};
+            }
+        }
+    }
     pub fn register_shooting(&mut self, shot_data: (String, String))->bool {
         let shooter = shot_data.0;
         let target = shot_data.1;
@@ -103,7 +110,7 @@ impl GameStruct {
             if i == 0 {
                 score.text = format!("{:5}", self.player.score)
             } else {
-                score.text = format!("{:5}", self.opponents[i - 1].score)
+                score.text = format!("{:5}", self.opponents[i - 1].score);
             }
         }
         let i_active = self.closest_opponent.unwrap_or(99);
@@ -111,14 +118,18 @@ impl GameStruct {
         for (i, score) in self.score_list.1.fragments_mut().iter_mut().enumerate() {
             if i == i_active + 1 {
                 score.color = Some(Color::WHITE);
-            } else {
+            } else if i!=0 && self.opponents.len()!=0 && self.opponents[i - 1].pos == (Vec2{x:0.0,y:16.0}){
+                score.color = Some(Color::from_rgb(190,190,190));
+            }else{
                 score.color = Some(Color::BLACK);
             }
         }
         for (i, name) in self.score_list.0.fragments_mut().iter_mut().enumerate() {
             if i == i_active + 1 {
                 name.color = Some(Color::WHITE);
-            } else {
+            }  else if i!=0 && self.opponents.len()!=0 && self.opponents[i - 1].pos == (Vec2{x:0.0,y:16.0}){
+                name.color = Some(Color::from_rgb(190,190,190));
+            }else{
                 name.color = Some(Color::BLACK);
             }
         }
