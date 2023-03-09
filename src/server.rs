@@ -1,12 +1,16 @@
-use std::{time::{Duration, Instant}, sync::mpsc, thread};
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
+use std::sync::mpsc::{Receiver, Sender};
 use std::{
     collections::HashMap,
     net::{SocketAddr, UdpSocket},
     str::FromStr,
 };
-use std::sync::mpsc::{ Receiver, Sender};
+use std::{
+    sync::mpsc,
+    thread,
+    time::{Duration, Instant},
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 
@@ -19,27 +23,27 @@ pub enum Message {
     Map(Vec<Vec<i32>>),
     ConnectionLost,
     Ping(String), //Client name
-    Pong
+    Pong,
 }
 pub struct Server {
-    owner:String,
+    owner: String,
     pub socket: UdpSocket,
-    pub clients: HashMap<String, (String,Instant)>,
-    pub channels: (Sender<Message>, Receiver<Message>),
+    pub clients: HashMap<String, (String, Instant)>,
 }
 
 impl Server {
     pub fn new() -> Server {
         let my_local_ip = local_ip().unwrap();
         let server = Server {
-            owner:String::new(),
-            channels: mpsc::channel(),
+            owner: String::new(),
             clients: HashMap::new(),
             socket: UdpSocket::bind(my_local_ip.to_string() + ":35353").unwrap(),
         };
-        let send_ch = server.channels.0.clone();
-        thread::spawn(move || loop{
-            send_ch.send(Message::Pong);
+        let socket_clone = server.socket.try_clone().unwrap();
+        let server_ip = server.socket.local_addr().unwrap();
+        thread::spawn(move || loop {
+            let m = serde_json::to_vec(&Message::Pong).unwrap();
+            socket_clone.send_to(&m, &server_ip).unwrap();
             thread::sleep(Duration::from_millis(1000))
         });
         server
@@ -52,59 +56,60 @@ impl Server {
         let mut buf = [0; 2048];
 
         loop {
-            // TEST PONG
-            match self.channels.1.try_recv(){
-                Ok(_)=>self.ping_pong_cleanup(),
-                Err(_)=>{},
-            };
             let (amt, src) = self.socket.recv_from(&mut buf)?;
             let m: Message = serde_json::from_slice(&buf[..amt]).unwrap();
 
             match &m {
                 Message::ClientJoined((name, ip_address)) => {
-                    if self.clients.len() ==0 {
+                    if self.clients.len() == 0 {
                         self.owner = name.to_owned();
                     }
-                    self.clients.insert(name.clone(),( ip_address.clone(), Instant::now()));
+                    self.clients
+                        .insert(name.clone(), (ip_address.clone(), Instant::now()));
                     self.send_user_list(name);
                     self.send_map(name, maze.clone());
                     self.send_to_all_clients(m);
                 }
                 Message::PlayerMoved(_, _, _) => {
+                    // println!("Player move");
                     self.send_to_all_clients(m);
                 }
                 Message::PlayerShot(_) => {
                     self.send_to_all_clients(m);
                 }
                 Message::Ping(client_name) => {
-                    // let s = 0;
-                    println!("Got ping {}, {}", src.to_string(), client_name);
-                    self.socket.send_to(&buf[..amt], src).unwrap();
+                    // println!("Got ping {}, {}", src.to_string(), client_name);
                     self.register_pong(client_name);
+                }
+                Message::Pong => {
+                    self.ping_pong_cleanup();
                 }
 
                 _ => {}
             };
         }
     }
-    fn ping_pong_cleanup(&mut self){
+    fn ping_pong_cleanup(&mut self) {
+        println!("Doing cleanup");
         let mut remove_clinets = vec![];
-        for (client,(_, time)) in &self.clients{
+        for (client, (_, time)) in &self.clients {
             let duration = time.elapsed();
-            if duration > Duration::new(2,0) && *client != self.owner{
+            if duration > Duration::new(2, 0) && *client != self.owner {
                 remove_clinets.push(client.to_owned());
             }
         }
-        for client in remove_clinets.iter(){
+        for client in remove_clinets.iter() {
             println!("Remove client {}", client);
             self.clients.remove(client);
             self.send_to_all_clients(Message::PlayerLeft(client.to_owned()));
         }
     }
-    fn register_pong(&mut self, client_name:&String){
-        let  client =  self.clients.get_mut(client_name);
-        if client.is_none(){return}
-        client.unwrap().1=Instant::now();
+    fn register_pong(&mut self, client_name: &String) {
+        let client = self.clients.get_mut(client_name);
+        if client.is_none() {
+            return;
+        }
+        client.unwrap().1 = Instant::now();
     }
     fn send_map(&self, client: &String, maze: Vec<Vec<i32>>) {
         let msg = Message::Map(maze);
@@ -139,7 +144,7 @@ impl Server {
             self.socket
                 .send_to(
                     &m,
-                    SocketAddr::from_str(&client.1.0).expect("Cant send data to all clients."),
+                    SocketAddr::from_str(&client.1 .0).expect("Cant send data to all clients."),
                 )
                 .unwrap();
         }
