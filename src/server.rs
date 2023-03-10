@@ -47,6 +47,7 @@ impl Server {
 
     pub fn start(&mut self, maze: Vec<Vec<i32>>) -> std::io::Result<()> {
         println!("Starting server...");
+        println!("Server IP: {:?}", self.socket.local_addr().unwrap());
         println!("");
 
         let mut buf = [0; 2048];
@@ -77,8 +78,6 @@ impl Server {
                     self.send_to_all_clients(m);
                 }
                 Message::Ping(client_name) => {
-                    // let s = 0;
-                    println!("Got ping {}, {}", src.to_string(), client_name);
                     self.socket.send_to(&buf[..amt], src).unwrap();
                     self.register_pong(client_name);
                 }

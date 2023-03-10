@@ -49,9 +49,6 @@ impl Client {
                         Message::ClientJoined((name, ip_address)) => {
                             println!("CLIENT: New user joined: {} {}", name, ip_address);
                         }
-                        Message::Ping(_) => {
-                            // println!("Got ping back")
-                        }
                         _ => {}
                     };
                     send_ch.send(m).unwrap();

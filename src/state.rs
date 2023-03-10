@@ -195,7 +195,10 @@ impl EventHandler for State {
                     match previous_view {
                         View::JoinGame(view_data) => {
                             let name = view_data.name.contents();
-                            let server_ip = view_data.ip_address.contents() + ":35353";
+                            let mut server_ip = view_data.ip_address.contents();
+                            if !server_ip.contains(":"){
+                                server_ip = server_ip + ":35353";
+                            }
                             let client = Arc::new(Client::new(name, server_ip.clone()));
 
                             self.client = Some(client.clone());
