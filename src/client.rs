@@ -50,7 +50,7 @@ impl Client {
                             println!("CLIENT: New user joined: {} {}", name, ip_address);
                         }
                         Message::Ping => {
-                            println!("Got ping back")
+                            //println!("Got ping back")
                         }
                         _ => {}
                     };

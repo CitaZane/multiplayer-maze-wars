@@ -66,7 +66,7 @@ impl Server {
                 }
                 Message::Ping => {
                     // let s = 0;
-                    println!("Got ping {}", src.to_string());
+                    //println!("Got ping {}", src.to_string());
                     self.socket.send_to(&buf[..amt], src).unwrap();
                 }
 
