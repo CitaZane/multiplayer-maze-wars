@@ -1,6 +1,6 @@
 # Multiplayer FPS
 ### Project description
-Our own version of the game [maze-wars](https://www.youtube.com/watch?v=5V5X5SbSjns).
+Our own version of the game [maze-wars](https://en.wikipedia.org/wiki/Maze_(1973_video_game))
 
 You can find the full description of the exercise here: https://github.com/01-edu/public/tree/master/subjects/multiplayer-fps 
 ### How to run and use the project
