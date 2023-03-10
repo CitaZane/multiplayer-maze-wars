@@ -24,6 +24,7 @@ pub struct Drawer {
     pub input_dimensions: Input,
     pub button_dimensions: Button,
     pub back_arrow_image: Image,
+    pub eye_image:Image,
 }
 
 impl Drawer {
@@ -45,6 +46,7 @@ impl Drawer {
             input_dimensions,
             button_dimensions,
             back_arrow_image: Image::from_path(ctx, "/back-arrow.png")?,
+            eye_image: Image::from_path(ctx, "/eye-front.png")?,
         })
     }
 
@@ -325,10 +327,9 @@ impl Drawer {
 
         Ok(())
     }
-    pub fn draw_eye(&self, canvas: &mut graphics::Canvas, ctx: &mut Context)->GameResult{
-        let img = ggez::graphics::Image::from_path(ctx, "/eye-front.png")?;
+    pub fn draw_eye(&self, canvas: &mut graphics::Canvas, _ctx: &mut Context)->GameResult{
         let dest = mint::Point2{ x: SCREEN_WIDTH/2.0 - 80.0, y: SCREEN_HEIGHT - 150.0 };
-        canvas.draw(&img, DrawParam::new()
+        canvas.draw(&self.eye_image, DrawParam::new()
         .dest(dest)
     );
         Ok(())
