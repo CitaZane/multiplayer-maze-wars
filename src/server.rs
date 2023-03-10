@@ -39,12 +39,11 @@ impl Server {
         };
         let send_ch = server.channels.0.clone();
         thread::spawn(move || loop{
-            send_ch.send(Message::Pong);
+            _ = send_ch.send(Message::Pong);
             thread::sleep(Duration::from_millis(1000))
         });
         server
     }
-
     pub fn start(&mut self, maze: Vec<Vec<i32>>) -> std::io::Result<()> {
         println!("Starting server...");
         println!("Server IP: {:?}", self.socket.local_addr().unwrap());
