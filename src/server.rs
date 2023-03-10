@@ -34,6 +34,7 @@ impl Server {
 
     pub fn start(&mut self, maze: Vec<Vec<i32>>) -> std::io::Result<()> {
         println!("Starting server...");
+        println!("Server IP: {:?}", self.socket.local_addr().unwrap());
         println!("");
 
         let mut buf = [0; 2048];
