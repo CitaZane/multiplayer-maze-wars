@@ -49,8 +49,8 @@ impl Client {
                         Message::ClientJoined((name, ip_address)) => {
                             println!("CLIENT: New user joined: {} {}", name, ip_address);
                         }
-                        Message::Ping => {
-                            println!("Got ping back")
+                        Message::Ping(_) => {
+                            // println!("Got ping back")
                         }
                         _ => {}
                     };
@@ -65,7 +65,7 @@ impl Client {
     }
 
     pub fn send_ping_msg(&self) {
-        let m = serde_json::to_vec(&Message::Ping).unwrap();
+        let m = serde_json::to_vec(&Message::Ping(self.name.clone())).unwrap();
         self.socket.send_to(&m, &self.server_ip).unwrap();
     }
 }

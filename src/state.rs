@@ -18,7 +18,6 @@ use ggez::{Context, GameError, GameResult};
 use std::sync::{mpsc, Arc};
 use copypasta::{ClipboardContext, ClipboardProvider};
 pub struct State {
-    // game_struct: GameStruct,
     pub view: View,
     pub server_ip: String,
     pub channels: (Sender<Message>, Receiver<Message>),
@@ -91,7 +90,9 @@ impl EventHandler for State {
                         self.view = View::MainMenu(MainMenuStruct::new(ctx).unwrap());
                         return Ok(());
                     }
-
+                    Message::PlayerLeft(player)=>{
+                        game.remove_player(player);
+                    }
                     _ => {}
                 }
             }
