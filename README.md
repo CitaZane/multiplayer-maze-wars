@@ -1,10 +1,22 @@
-# Multiplayer FPS
-
+# Multiplayer Maze-War game
+Project developed as a part of school curriculum project
 ### Project description
 
 Our own version of the game [maze-wars](<https://en.wikipedia.org/wiki/Maze_(1973_video_game)>)
 
-You can find the full description of the exercise here: https://github.com/01-edu/public/tree/master/subjects/multiplayer-fps
+Maze-Wars is a simplistic multiplayer first person shooting game.
+
+The game presents a simple user interface:
+* interactive main menu and level editor page
+* map with player location and direction
+* 3D view of the maze and opponents
+
+### Tools
+- Rust
+- ggez (GUI)
+- UDP protocol for communication
+- ray-casting for 3D view 
+
 
 ### How to run and use the project
 
@@ -20,23 +32,12 @@ You will be presented with the **main menu**, where you have the options to:
    - Make a map which you can use for your own game
    - Enter a name for your map and use or hold the right click to draw walls
 
-### Audit questions:
-
-https://github.com/01-edu/public/tree/master/subjects/multiplayer-fps/audit
-
-### Tools
-
-- Rust
-- ggez
-
 ### Team
-
-Drawing and game logic<br>
-
 - Zane
 - Vic
-
-Server & client architecture and menu<br>
-
 - Gatis
 - Kristofer
+
+### Acknowledgments
+* Graphics of opponents and general guidelines for GUI design from [here](https://github.com/Blueteak/MazeWar)
+
